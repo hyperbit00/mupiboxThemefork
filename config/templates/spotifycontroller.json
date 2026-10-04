@@ -1,0 +1,15 @@
+{
+	"spotify": {
+		"clientId": "",
+		"clientSecret": "",
+		"accessToken": "",
+		"refreshToken": "",
+		"redirectUri": "",
+		"deviceId": ""
+	},
+	"server": {
+		"port": "5005",
+		"logLevel": "error"
+	},
+	"ttsLanguage": ""
+}

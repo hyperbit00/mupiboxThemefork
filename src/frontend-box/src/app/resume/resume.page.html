@@ -1,0 +1,14 @@
+<ion-header class="medialist-header">
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button icon="arrow-back-outline" defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ km() ? displayTexts.text('resumeTitle') : 'Resume' }}</ion-title>
+    <span slot="end" class="mupihat-icon-container"><mupi-status></mupi-status></span>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="resume-content">
+  <mupi-loading [loading]="isLoading()"></mupi-loading>
+  <mupi-swiper [data]="swiperData()" (elementClicked)="this.coverClicked($event.data)"></mupi-swiper>
+</ion-content>

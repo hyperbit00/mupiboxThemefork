@@ -1,0 +1,46 @@
+/* Theme editor (MuPiBox settings -> Theme -> "Customize this theme") */
+#themeEditor { display: none; margin: 14px 0 6px; padding: 12px; border: 1px solid #c9d3da; border-radius: 10px; background: #f6f9fb; }
+#themeEditor.open { display: block; }
+#themeEditor, #themeEditor * { box-sizing: border-box; }
+#themeEditor h3 { margin: 0 0 6px; font-size: 14px; }
+#themeEditor p.te-hint { margin: 2px 0 8px; font-size: 12px; color: #4a5a66; }
+#themeEditor .te-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+#themeEditor .te-top .te-title { font-weight: 600; margin-right: auto; }
+#themeEditor button.te-btn { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 6px; background: #0d5a80; color: #fff; font-size: 13px; line-height: 1.2; text-align: center; }
+#themeEditor button.te-btn:hover { background: #0a4766; }
+#themeEditor button.te-btn:focus-visible { outline: 2px solid #4a90e2; outline-offset: 2px; }
+#themeEditor button.te-btn.ghost { background: #e3ebf0; color: #0d3347; }
+#themeEditor button.te-btn.ghost:hover { background: #d3dee6; }
+#themeEditor button.te-btn.warn { background: #a8341f; }
+#themeEditor button.te-btn.on { background: #2a9d3f; }
+#themeEditor button.te-btn[disabled] { opacity: .45; cursor: default; }
+#themeEditor .te-main { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+#themeEditor .te-stage { flex: 1 1 420px; min-width: 0; max-width: 800px; }
+#themeEditor .te-frame-wrap { position: relative; width: 800px; height: 480px; transform-origin: top left; border: 1px solid #888; background: #000; }
+#themeEditor .te-frame-clip { overflow: hidden; max-width: 100%; }
+#themeEditor iframe { width: 800px; height: 480px; border: 0; display: block; background: #000; }
+#themeEditor .te-side { flex: 1 1 320px; min-width: 300px; max-width: 520px; }
+#themeEditor .te-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+#themeEditor .te-tab { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 6px 6px 0 0; background: #e3ebf0; color: #0d3347; font-size: 13px; }
+#themeEditor .te-tab.active { background: #0d5a80; color: #fff; }
+#themeEditor .te-pane { display: none; padding: 10px; border: 1px solid #c9d3da; border-radius: 0 8px 8px 8px; background: #fff; max-height: 520px; overflow: auto; }
+#themeEditor .te-pane.active { display: block; }
+#themeEditor .te-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #eef2f5; }
+#themeEditor .te-row.changed { background: #fff8e0; }
+#themeEditor .te-row label { float: none; margin: 0; padding: 0; font-size: 12px; line-height: 1.3; color: #212529; font-weight: 400; word-break: break-all; }
+#themeEditor .te-row .te-ctl { display: flex; align-items: center; gap: 6px; }
+#themeEditor input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid #999; border-radius: 4px; background: none; cursor: pointer; }
+#themeEditor input[type=text], #themeEditor input[type=number], #themeEditor select { float: none; width: auto; height: 26px; padding: 2px 6px; font-size: 12px; border: 1px solid #9aa8b2; border-radius: 4px; background: #fff; margin: 0; }
+#themeEditor input[type=text].te-val { width: 120px; }
+#themeEditor input[type=range] { width: 90px; float: none; margin: 0; }
+#themeEditor .te-x { all: unset; cursor: pointer; color: #a8341f; font-size: 15px; padding: 0 4px; }
+#themeEditor .te-sel { font-family: monospace; font-size: 12px; background: #eef2f5; padding: 4px 6px; border-radius: 4px; word-break: break-all; margin: 4px 0; }
+#themeEditor .te-group { margin: 10px 0 4px; font-size: 12px; font-weight: 700; color: #0d3347; }
+#themeEditor .te-scope label { display: block; margin: 2px 0; font-size: 12px; float: none; font-weight: 400; }
+#themeEditor .te-scope input { float: none; margin-right: 6px; }
+#themeEditor .te-msg { min-height: 18px; font-size: 12px; margin-top: 8px; }
+#themeEditor .te-msg.ok { color: #1f7a33; }
+#themeEditor .te-msg.err { color: #a8341f; }
+#themeEditor .te-bk { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid #eef2f5; font-size: 12px; }
+#themeEditor .te-bk small { color: #5b6b76; }
+#themeEditor .te-emptynote { font-size: 12px; color: #5b6b76; padding: 6px 0; }

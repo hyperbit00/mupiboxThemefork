@@ -1,0 +1,45 @@
+{
+  "name": "mupibox",
+  "version": "1.0.0",
+  "description": "Music player with touch screen.",
+  "workspaces": [
+    "src/*"
+  ],
+  "scripts": {
+    "docker:build": "docker build -t mupibox .",
+    "docker:start": "docker run -it -v ./src/backend-api/:/home/dietpi/.mupibox/Sonos-Kids-Controller-master/server/ -p 80:80 -p 8200:8200 -p 5005:5005 mupibox:latest bash",
+    "serve": "concurrently 'npm run serve:admin' 'npm run serve:frontend-box' 'npm run serve:backend-api' 'npm run serve:backend-player'",
+    "serve:admin": "cd AdminInterface/www && php -S 127.0.0.1:8000",
+    "serve:frontend-box": "npm run serve --workspace=mupibox-frontend-box",
+    "serve:backend-api": "npm run serve --workspace=mupibox-backend-api",
+    "serve:backend-player": "npm run serve --workspace=mupibox-backend-player",
+    "build": "npm run build --workspaces",
+    "build:frontend-box": "npm run build --workspace=mupibox-frontend-box",
+    "build:backend-api": "npm run build --workspace=mupibox-backend-api",
+    "build:backend-player": "npm run build --workspace=mupibox-backend-player",
+    "test": "npm run test --workspaces",
+    "test:frontend-api": "npm run test --workspace=mupibox-frontend-api",
+    "test:frontend-box": "npm run test --workspace=mupibox-frontend-box",
+    "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
+    "notices": "node src/tools/third-party-notices.mjs",
+    "notices:check": "node src/tools/third-party-notices.mjs --check"
+  },
+  "keywords": [
+    "mupi",
+    "music",
+    "rss feed",
+    "spotify",
+    "raspberry pi",
+    "touch screen"
+  ],
+  "author": "Mupi Team",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "*",
+    "baseline-browser-mapping": "^2.9.9",
+    "concurrently": "9.1.0",
+    "cross-env": "7.0.3"
+  }
+}

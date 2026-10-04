@@ -1,0 +1,761 @@
+import { HttpClient } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { catchError, EMPTY, firstValueFrom, from, Observable, of } from 'rxjs'
+import { map, mergeMap, scan, switchMap, take, takeLast, timeout } from 'rxjs/operators'
+import { environment } from 'src/environments/environment'
+import { LogService } from './log.service'
+import type { CategoryType, Media } from './media'
+import { SpotifyConfig } from './spotify'
+import { SpotifyPlayerService } from './spotify-player.service'
+import { ExtraDataMedia, localizeCoverUrl, pickCoverUrl, Utils } from './utils'
+
+@Injectable({
+  providedIn: 'root',
+})
+export class SpotifyService {
+  deviceName: string | undefined = undefined
+  // how often a lookup of the lists failed (a timeout, Spotify blocking requests): a list made with failures is not
+  // kept as complete, see MediaService.remakeHomeList
+  failures = 0
+
+  constructor(
+    private http: HttpClient,
+    private logService: LogService,
+    private playerService: SpotifyPlayerService,
+  ) {
+    this.initializeSpotifyConfig()
+  }
+
+  // ============================================================================
+  // Player Service Delegation (expose player observables and methods)
+  // ============================================================================
+
+  /** Player state observable */
+  get playerState$() {
+    return this.playerService.playerState$
+  }
+
+  /** Current track observable */
+  get currentTrack$() {
+    return this.playerService.currentTrack$
+  }
+
+  get trackChangeDetected$() {
+    return this.playerService.trackChangeDetected$
+  }
+
+  /** Check if player is ready */
+  isPlayerReady(): boolean {
+    return this.playerService.isPlayerReady()
+  }
+
+  /** Check if we should use the web player */
+  shouldUsePlayer(): boolean {
+    return this.playerService.shouldUsePlayer()
+  }
+
+  /** Get the device ID */
+  getDeviceId(): string | null {
+    return this.playerService.getDeviceId()
+  }
+
+  /** Ensure player is ready for playback */
+  async ensurePlayerReady(): Promise<boolean> {
+    return this.playerService.ensurePlayerReady()
+  }
+
+  /** Get current state */
+  async getCurrentState(): Promise<any> {
+    return this.playerService.getCurrentState()
+  }
+
+  /** Create media from Spotify track */
+  createMediaFromSpotifyTrack(track: any): Media {
+    return this.playerService.createMediaFromSpotifyTrack(track)
+  }
+
+  // ============================================================================
+  // Configuration
+  // ============================================================================
+
+  private initializeSpotifyConfig(): void {
+    const spotifyConfigUrl = `${environment.backend.apiUrl}/spotify/config`
+    this.http
+      .get<SpotifyConfig>(spotifyConfigUrl)
+      .pipe(take(1))
+      .subscribe({
+        next: (spotifyConfig: SpotifyConfig) => {
+          this.deviceName = spotifyConfig.deviceName
+          this.playerService.initialize(spotifyConfig.deviceName)
+        },
+        error: (error) => {
+          this.logService.error('Failed to get Spotify config:', error)
+        },
+      })
+  }
+
+  // ============================================================================
+  // Pagination Helper
+  // ============================================================================
+
+  /**
+   * Helper method to fetch all paginated results from the backend API using total count
+   */
+  // maxPages: a search of Spotify says total = all its hits (a thousand): only the first pages are fetched then
+  private fetchAllPaginatedResults<T>(url: string, baseParams: any, pageSize = 10, maxPages = Number.POSITIVE_INFINITY): Observable<T[]> {
+    const fetchPage = (offset: number): Observable<{ items: T[]; total: number; limit: number; offset: number }> => {
+      const params = { ...baseParams, limit: pageSize.toString(), offset: offset.toString() }
+      return this.http.get<{ items: T[]; total: number; limit: number; offset: number }>(url, { params })
+    }
+
+    // First, get the total count and then fetch all pages
+    return fetchPage(0).pipe(
+      switchMap((firstPageResponse) => {
+        const { items: firstPageItems, total } = firstPageResponse
+
+        // If we have all results in the first page, return them
+        if (firstPageItems.length >= total) {
+          return of(firstPageItems)
+        }
+
+        // Calculate how many more pages we need
+        const remainingItems = total - firstPageItems.length
+        const additionalPagesNeeded = Math.min(Math.ceil(remainingItems / pageSize), maxPages - 1)
+
+        if (additionalPagesNeeded <= 0) {
+          return of(firstPageItems)
+        }
+
+        // Create observables for additional pages.
+        // MED-14: previously offset = page * pageSize, which assumed every
+        // page returned exactly pageSize items. When the first page came
+        // back short (Spotify can server-side-filter for market/availability,
+        // or the user has fewer-than-pageSize items in some categories),
+        // the second page started at pageSize instead of firstPageItems.length
+        // — every item between firstPageItems.length and pageSize was
+        // silently skipped. Anchor subsequent offsets to the actual length
+        // of the first page; if first page was full this still produces
+        // pageSize, 2*pageSize, … as before.
+        const additionalPageObservables: Observable<T[]>[] = []
+        for (let page = 1; page <= additionalPagesNeeded; page++) {
+          const offset = firstPageItems.length + (page - 1) * pageSize
+          additionalPageObservables.push(
+            fetchPage(offset).pipe(
+              map((response) => response.items),
+              catchError((error) => {
+                this.failures++
+                this.logService.warn(`Failed to fetch page at offset ${offset}:`, error?.message || error)
+                return of([] as T[])
+              }),
+            ),
+          )
+        }
+
+        // Combine first page with all additional pages.
+        // Phase-7.6: was concatMap (strict sequential) — for an artist
+        // with ~28 albums (pageSize=10) this was 28 round-trips of
+        // ~40ms each, blocking the medialist render. mergeMap with
+        // concurrency 8 pipelines the requests through the backend
+        // event-loop. Resulting array order is no longer page-aligned,
+        // but medialist.page sorts on the client (localeCompare) before
+        // render so the user-visible order is unchanged.
+        return from(additionalPageObservables).pipe(
+          mergeMap((obs) => obs, 8),
+          scan((acc: T[], pageItems: T[]) => [...acc, ...pageItems], firstPageItems),
+          takeLast(1),
+        )
+      }),
+      catchError((error) => {
+        this.failures++
+        this.logService.warn('Pagination fetch failed:', error?.message || error)
+        return of([])
+      }),
+    )
+  }
+
+  // ============================================================================
+  // Media Query Methods
+  // ============================================================================
+
+  getMediaByQuery(
+    query: string,
+    category: CategoryType,
+    index: number,
+    extraDataSource: ExtraDataMedia,
+  ): Observable<Media[]> {
+    const searchUrl = `${environment.backend.apiUrl}/spotify/search/albums`
+
+    // (the first 100 hits: a search for an artist's name found a thousand albums, and every page of them was asked
+    // for - a hundred requests to Spotify for one entry, well into its rate limit)
+    return this.fetchAllPaginatedResults<any>(searchUrl, { query }, 10, 10).pipe(
+      map((albums: any[]) => {
+        return albums.map((album) => {
+          const media: Media = {
+            id: album.id,
+            artist: album.artists?.[0]?.name || 'Unknown Artist',
+            title: album.name,
+            cover: localizeCoverUrl(pickCoverUrl(album.images)),
+            release_date: album.release_date,
+            type: 'spotify',
+            category,
+            index,
+          }
+          Utils.copyExtraMediaData(extraDataSource, media)
+          return media
+        })
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Search query failed for "${query}" due to API error, returning empty results:`,
+          err?.message || err,
+        )
+        return of([])
+      }),
+    )
+  }
+
+  getMediaByArtistID(
+    id: string,
+    category: CategoryType,
+    index: number,
+    extraDataSource: ExtraDataMedia,
+  ): Observable<Media[]> {
+    const artistAlbumsUrl = `${environment.backend.apiUrl}/spotify/artist/${id}/albums`
+    const artistUrl = `${environment.backend.apiUrl}/spotify/artist/${id}`
+
+    return this.http.get<any>(artistUrl).pipe(
+      // B10: 15s timeout so a hung Spotify-API call doesn't block the
+      // current$ polling loop indefinitely. catchError further down
+      // catches the TimeoutError and falls back to the placeholder.
+      timeout(15000),
+      switchMap((artist) => {
+        const artistcover = localizeCoverUrl(pickCoverUrl(artist.images))
+
+        // the whole list in one call: the server keeps it and checks it with one page (all=1) - asked page by page,
+        // a big artist was 30 Spotify requests whenever the kept pages got old. The first time it can take a while.
+        return this.http.get<{ items?: any[] }>(artistAlbumsUrl, { params: { all: '1' } }).pipe(
+          timeout(90000),
+          map((response) => response?.items ?? []),
+          map((albums) => {
+            return albums.map((album) => {
+              const media: Media = {
+                id: album.id,
+                artist: album.artists?.[0]?.name || 'Unknown Artist',
+                title: album.name,
+                cover: localizeCoverUrl(pickCoverUrl(album.images)),
+                artistcover: artistcover,
+                release_date: album.release_date,
+                type: 'spotify',
+                category,
+                index,
+              }
+              Utils.copyExtraMediaData(extraDataSource, media)
+              return media
+            })
+          }),
+        )
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Artist albums query failed for artist ${id} due to API error, returning empty results:`,
+          err?.message || err,
+        )
+        return of([])
+      }),
+    )
+  }
+
+  getMediaByShowID(
+    id: string,
+    category: CategoryType,
+    index: number,
+    extraDataSource: ExtraDataMedia,
+  ): Observable<Media[]> {
+    const showUrl = `${environment.backend.apiUrl}/spotify/show/${id}`
+    const showEpisodesUrl = `${environment.backend.apiUrl}/spotify/show/${id}/episodes`
+
+    return this.http.get<any>(showUrl).pipe(
+      timeout(15000), // B10
+      switchMap((show) => {
+        const showName = show.name || 'Unknown Show'
+        const showcover = localizeCoverUrl(pickCoverUrl(show.images))
+
+        return this.fetchAllPaginatedResults<any>(showEpisodesUrl, {}).pipe(
+          map((episodes) => {
+            return episodes
+              .filter((episode) => episode != null)
+              .map((episode) => {
+                const media: Media = {
+                  showid: episode.id,
+                  artist: showName,
+                  title: episode.name,
+                  cover: episode.images?.length ? localizeCoverUrl(pickCoverUrl(episode.images)) : showcover,
+                  artistcover: showcover,
+                  type: 'spotify',
+                  category,
+                  release_date: episode.release_date,
+                  index,
+                }
+                Utils.copyExtraMediaData(extraDataSource, media)
+                return media
+              })
+          }),
+        )
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Show episodes query failed for show ${id} due to API error, returning empty results:`,
+          err?.message || err,
+        )
+        return of([])
+      }),
+    )
+  }
+
+  getMediaByID(
+    id: string,
+    category: CategoryType,
+    index: number,
+    shuffle: boolean,
+    artistcover: string,
+    resumespotifyduration_ms: number,
+    resumespotifyprogress_ms: number,
+    resumespotifytrack_number: number,
+  ): Observable<Media> {
+    const albumUrl = `${environment.backend.apiUrl}/spotify/album/${id}`
+
+    return this.http.get<any>(albumUrl).pipe(
+      timeout(15000), // B10
+      map((album) => {
+        const media: Media = {
+          id: album.id,
+          artist: album.artists?.[0]?.name || 'Unknown Artist',
+          title: album.name,
+          cover: localizeCoverUrl(pickCoverUrl(album.images)),
+          type: 'spotify',
+          release_date: album.release_date,
+          category,
+          index,
+        }
+        if (resumespotifyduration_ms) {
+          media.resumespotifyduration_ms = resumespotifyduration_ms
+        }
+        if (resumespotifyprogress_ms) {
+          media.resumespotifyprogress_ms = resumespotifyprogress_ms
+        }
+        if (resumespotifytrack_number) {
+          media.resumespotifytrack_number = resumespotifytrack_number
+        }
+        if (artistcover) {
+          media.artistcover = artistcover
+        }
+        if (shuffle) {
+          media.shuffle = shuffle
+        }
+        return media
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Album info query failed for album ${id} due to API error, returning unavailable placeholder:`,
+          err?.message || err,
+        )
+        // MED-11: previously returned EMPTY → the album silently disappeared
+        // from the resume / list view. Return a placeholder with
+        // `unavailable: true` so the slot is preserved and templates can
+        // render a "this item failed to load" badge instead of leaving the
+        // user wondering where their album went.
+        return of(this.placeholderMedia({ id, category, index, shuffle, artistcover, resumespotifyduration_ms, resumespotifyprogress_ms, resumespotifytrack_number }))
+      }),
+    )
+  }
+
+  getAudiobookByID(
+    id: string,
+    category: CategoryType,
+    index: number,
+    shuffle: boolean,
+    artistcover: string,
+    resumespotifyduration_ms: number,
+    resumespotifyprogress_ms: number,
+    resumespotifytrack_number: number,
+  ): Observable<Media> {
+    const audiobookUrl = `${environment.backend.apiUrl}/spotify/audiobook/${id}`
+
+    return this.http.get<any>(audiobookUrl).pipe(
+      timeout(15000), // B10
+      map((audiobook) => {
+        const media: Media = {
+          audiobookid: audiobook.id,
+          artist: audiobook.authors?.[0]?.name || 'Unknown Author',
+          title: audiobook.name,
+          cover: localizeCoverUrl(pickCoverUrl(audiobook.images)),
+          type: 'spotify',
+          category,
+          index,
+        }
+        if (resumespotifyduration_ms) {
+          media.resumespotifyduration_ms = resumespotifyduration_ms
+        }
+        if (resumespotifyprogress_ms) {
+          media.resumespotifyprogress_ms = resumespotifyprogress_ms
+        }
+        if (resumespotifytrack_number) {
+          media.resumespotifytrack_number = resumespotifytrack_number
+        }
+        if (artistcover) {
+          media.artistcover = artistcover
+        }
+        if (shuffle) {
+          media.shuffle = shuffle
+        }
+        return media
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Audiobook info query failed for audiobook ${id} due to API error, returning unavailable placeholder:`,
+          err?.message || err,
+        )
+        // MED-11: same as getMediaByID — placeholder instead of EMPTY.
+        return of(this.placeholderMedia({ audiobookid: id, category, index, shuffle, artistcover, resumespotifyduration_ms, resumespotifyprogress_ms, resumespotifytrack_number }))
+      }),
+    )
+  }
+
+  getMediaByEpisode(
+    id: string,
+    category: CategoryType,
+    index: number,
+    shuffle: boolean,
+    artistcover: string,
+    resumespotifyduration_ms: number,
+    resumespotifyprogress_ms: number,
+    resumespotifytrack_number: number,
+  ): Observable<Media> {
+    const episodeUrl = `${environment.backend.apiUrl}/spotify/episode/${id}`
+
+    return this.http.get<any>(episodeUrl).pipe(
+      timeout(15000), // B10
+      map((episode) => {
+        const media: Media = {
+          showid: episode.id,
+          // MED-9: episode.show is an OBJECT not an array — the original
+          // `episode.show?.[0]?.name` returned undefined for every episode,
+          // so resume entries for podcasts always rendered "Unknown Show".
+          // Spotify's /episodes/{id} response shape is `show: { name, … }`,
+          // see https://developer.spotify.com/documentation/web-api/reference/get-an-episode
+          artist: episode.show?.name || 'Unknown Show',
+          title: episode.name,
+          cover: localizeCoverUrl(pickCoverUrl(episode.images)),
+          type: 'spotify',
+          release_date: episode.release_date,
+          category,
+          index,
+        }
+        if (resumespotifyduration_ms) {
+          media.resumespotifyduration_ms = resumespotifyduration_ms
+        }
+        if (resumespotifyprogress_ms) {
+          media.resumespotifyprogress_ms = resumespotifyprogress_ms
+        }
+        if (resumespotifytrack_number) {
+          media.resumespotifytrack_number = resumespotifytrack_number
+        }
+        if (artistcover) {
+          media.artistcover = artistcover
+        }
+        if (shuffle) {
+          media.shuffle = shuffle
+        }
+        return media
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.warn(
+          `Episode info query failed for episode ${id} due to API error, returning unavailable placeholder:`,
+          err?.message || err,
+        )
+        // MED-11: same as getMediaByID — placeholder instead of EMPTY.
+        return of(this.placeholderMedia({ showid: id, category, index, shuffle, artistcover, resumespotifyduration_ms, resumespotifyprogress_ms, resumespotifytrack_number }))
+      }),
+    )
+  }
+
+  getMediaByPlaylistID(
+    id: string,
+    category: CategoryType,
+    index: number,
+    shuffle: boolean,
+    artistcover: string,
+    resumespotifyduration_ms: number,
+    resumespotifyprogress_ms: number,
+    resumespotifytrack_number: number,
+  ): Observable<Media> {
+    // Unified endpoint handles API + Scraper fallback automatically in backend
+    const playlistUrl = `${environment.backend.apiUrl}/spotify/playlist/${id}`
+
+    return this.http.get<any>(playlistUrl).pipe(
+      timeout(60000), // 60 seconds (for scraper fallback if needed)
+      map((response: any) => {
+        // Check if response is from backend scraper (has different structure)
+        const isFromBackend = response.playlist && response.tracks
+
+        const media: Media = {
+          playlistid: isFromBackend ? id : response.id,
+          title: isFromBackend ? response.playlist.name : response.name,
+          cover: localizeCoverUrl(pickCoverUrl(isFromBackend ? response.playlist.images : response?.images)),
+          type: 'spotify',
+          category,
+          index,
+        }
+
+        if (resumespotifyduration_ms) {
+          media.resumespotifyduration_ms = resumespotifyduration_ms
+        }
+        if (resumespotifyprogress_ms) {
+          media.resumespotifyprogress_ms = resumespotifyprogress_ms
+        }
+        if (resumespotifytrack_number) {
+          media.resumespotifytrack_number = resumespotifytrack_number
+        }
+        if (artistcover) {
+          media.artistcover = artistcover
+        }
+        if (shuffle) {
+          media.shuffle = shuffle
+        }
+        return media
+      }),
+      catchError((err) => {
+        this.failures++
+        this.logService.error(
+          `Failed to fetch playlist ${id}, returning unavailable placeholder:`,
+          err?.message || err,
+        )
+        // MED-11: same as the album / audiobook / episode branches —
+        // return a placeholder so the playlist's slot doesn't vanish.
+        return of(this.placeholderMedia({ playlistid: id, category, index, shuffle, artistcover, resumespotifyduration_ms, resumespotifyprogress_ms, resumespotifytrack_number }))
+      }),
+    )
+  }
+
+  // ============================================================================
+  // Helpers
+  // ============================================================================
+
+  /**
+   * Build a Media item that stands in for one whose Spotify metadata fetch
+   * failed. Preserves the identifying field (`id` / `audiobookid` / `showid`
+   * / `playlistid`), category + index so list ordering stays put, plus any
+   * resume timestamps so the player can still address the entry. The
+   * `unavailable: true` flag lets templates render an "item failed to load"
+   * marker; an empty cover/title falls back to the default placeholder
+   * artwork.
+   */
+  private placeholderMedia(p: {
+    id?: string
+    audiobookid?: string
+    showid?: string
+    playlistid?: string
+    category: CategoryType
+    index: number
+    shuffle?: boolean
+    artistcover?: string
+    resumespotifyduration_ms?: number
+    resumespotifyprogress_ms?: number
+    resumespotifytrack_number?: number
+  }): Media {
+    const media: Media = {
+      type: 'spotify',
+      category: p.category,
+      index: p.index,
+      title: 'Nicht verfügbar',
+      cover: '../assets/images/nocover_mupi.png',
+      unavailable: true,
+    }
+    if (p.id) media.id = p.id
+    if (p.audiobookid) media.audiobookid = p.audiobookid
+    if (p.showid) media.showid = p.showid
+    if (p.playlistid) media.playlistid = p.playlistid
+    if (p.artistcover) media.artistcover = p.artistcover
+    if (p.shuffle) media.shuffle = p.shuffle
+    if (p.resumespotifyduration_ms) media.resumespotifyduration_ms = p.resumespotifyduration_ms
+    if (p.resumespotifyprogress_ms) media.resumespotifyprogress_ms = p.resumespotifyprogress_ms
+    if (p.resumespotifytrack_number) media.resumespotifytrack_number = p.resumespotifytrack_number
+    return media
+  }
+
+  // ============================================================================
+  // Validation
+  // ============================================================================
+
+  async validateSpotify(spotifyId: string, spotifyCategory: string): Promise<boolean> {
+    try {
+      const validationUrl = `${environment.backend.apiUrl}/spotify/validate`
+      const data = await firstValueFrom(
+        this.http
+          .post<any>(validationUrl, {
+            id: spotifyId,
+            type: spotifyCategory,
+          })
+          .pipe(timeout(30000)),
+      )
+
+      return data.valid || false
+    } catch (err) {
+      this.logService.warn(`Validation failed for ${spotifyCategory} ${spotifyId}:`, err)
+      return false
+    }
+  }
+
+  // ============================================================================
+  // Media Info Methods
+  // ============================================================================
+
+  /**
+   * Get album information including total tracks and track data
+   */
+  getAlbumInfo(albumId: string): Observable<{ total_tracks: number; album_name: string; tracks?: any[] }> {
+    const albumUrl = `${environment.backend.apiUrl}/spotify/album/${albumId}`
+
+    return this.http.get<any>(albumUrl).pipe(
+      timeout(15000), // B10
+      map((album) => ({
+        total_tracks: album.total_tracks,
+        album_name: album.name,
+        tracks: album.tracks.items.map((track: any) => ({
+          id: track.id,
+          uri: track.uri,
+          name: track.name,
+          track_number: track.track_number,
+          duration_ms: track.duration_ms,
+          artist: track.artists?.map((artist: any) => artist.name).join(', '),
+        })),
+      })),
+      catchError((error) => {
+        this.logService.error('Error getting album info:', error)
+        return of({ total_tracks: 0, album_name: '', tracks: [] })
+      }),
+    )
+  }
+
+  /**
+   * Get playlist information including total tracks and track data
+   */
+  getPlaylistInfo(playlistId: string): Observable<{ total_tracks: number; playlist_name: string; tracks?: any[] }> {
+    // Unified endpoint handles API + Scraper fallback automatically in backend
+    const playlistUrl = `${environment.backend.apiUrl}/spotify/playlist/${playlistId}?refresh=true`
+
+    return this.http.get<any>(playlistUrl).pipe(
+      timeout(60000), // 60 seconds (for scraper fallback if needed)
+      switchMap((response) => {
+        // Check if response is from backend scraper (has different structure)
+        const isFromBackend = response.playlist && response.tracks
+
+        if (isFromBackend) {
+          // Scraper format - tracks are directly in array with full data
+          return of({
+            total_tracks: response.tracks.length,
+            playlist_name: response.playlist.name,
+            tracks: response.tracks.map((track: any) => ({
+              id: track.id,
+              uri: track.uri,
+              name: track.name,
+              duration_ms: track.duration_ms,
+              artist: track.artists?.map((artist: any) => artist.name).join(', '),
+            })),
+          })
+        } else {
+          // MED-8: response.tracks.items can contain entries where
+          // item.track is null (Spotify keeps the slot for tracks that
+          // were removed from the playlist or are unavailable in the
+          // current market). The previous code threw a TypeError on
+          // item.track.id and crashed the whole getPlaylistInfo call —
+          // upstream callers then saw a rejected observable and the
+          // playlist failed to load entirely. Filter the null tracks
+          // out before mapping; the totals already exclude them.
+          const validItems = (response.tracks.items as any[]).filter((item) => item?.track != null)
+          return of({
+            total_tracks: response.tracks.total,
+            playlist_name: response.name,
+            tracks: validItems.map((item: any) => ({
+              id: item.track.id,
+              uri: item.track.uri,
+              name: item.track.name,
+              duration_ms: item.track.duration_ms,
+              artist: item.track.artists?.map((artist: any) => artist.name).join(', '),
+            })),
+          })
+        }
+      }),
+      catchError((error) => {
+        this.logService.error('Failed to fetch playlist info:', error)
+        return of({ total_tracks: 0, playlist_name: '', tracks: [] })
+      }),
+    )
+  }
+
+  /**
+   * Get show information including total episodes and episode data
+   */
+  getShowInfo(showId: string): Observable<{ total_episodes: number; show_name: string; episodes?: any[] }> {
+    const showUrl = `${environment.backend.apiUrl}/spotify/show/${showId}`
+    const showEpisodesUrl = `${environment.backend.apiUrl}/spotify/show/${showId}/episodes`
+
+    return this.http.get<any>(showUrl).pipe(
+      timeout(15000), // B10
+      switchMap((show) => {
+        // Get all episodes for position calculation
+        return this.http.get<any[]>(showEpisodesUrl).pipe(
+          timeout(15000), // B10
+          map((episodesData) => ({
+            total_episodes: show.total_episodes,
+            show_name: show.name,
+            episodes: episodesData.map((episode: any) => ({
+              id: episode.id,
+              uri: episode.uri || `spotify:episode:${episode.id}`,
+              name: episode.name,
+              duration_ms: episode.duration_ms,
+            })),
+          })),
+        )
+      }),
+      catchError((error) => {
+        this.logService.error('Error getting show info:', error)
+        return of({ total_episodes: 0, show_name: '', episodes: [] })
+      }),
+    )
+  }
+
+  /**
+   * Get audiobook information including total chapters and chapter data
+   */
+  getAudiobookInfo(
+    audiobookId: string,
+  ): Observable<{ total_chapters: number; audiobook_name: string; chapters?: any[] }> {
+    const audiobookUrl = `${environment.backend.apiUrl}/spotify/audiobook/${audiobookId}`
+
+    return this.http.get<any>(audiobookUrl).pipe(
+      timeout(15000), // B10
+      map((audiobook) => ({
+        total_chapters: audiobook.chapters?.total || 0,
+        audiobook_name: audiobook.name,
+        chapters:
+          audiobook.chapters?.items?.map((chapter: any) => ({
+            id: chapter.id,
+            uri: chapter.uri,
+            name: chapter.name,
+            duration_ms: chapter.duration_ms,
+          })) || [],
+      })),
+      catchError((error) => {
+        this.logService.error('Error getting audiobook info:', error)
+        return of({ total_chapters: 0, audiobook_name: '', chapters: [] })
+      }),
+    )
+  }
+}

@@ -1,0 +1,24 @@
+# Config files.
+src/backend-api/config/*.json
+src/backend-player/config/*.json
+**/server/config/*.json
+
+# Temporary deploy files.
+src/**/*.zip
+src/deploy.zip
+src/deploy
+
+# npm / Angular / esbuild files.
+node_modules
+.angular
+*.esbuild-meta.json
+
+# Other files.
+*.bak
+
+# Output of a plain tsc run (the box runs the esbuild bundle, see src/deploy)
+src/backend-api/build/
+
+
+__pycache__/
+*.pyc

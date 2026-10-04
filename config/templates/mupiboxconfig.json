@@ -1,0 +1,462 @@
+{
+	"mupibox": {
+		"host": "MuPiBox",
+		"ip_control_backend": false,
+		"theme": "blue",
+		"installedThemes": [
+			"blue",
+			"deepblue",
+			"purple",
+			"pink",
+			"green",
+			"red",
+			"darkred",
+			"orange",
+			"chocolate",
+			"vintage",
+			"dark",
+			"light",
+			"xmas",
+			"ironman",
+			"captainamerica",
+			"wood",
+			"matrix",
+			"mint",
+			"danger",
+			"cinema",
+			"coverflow",
+			"earth",
+			"steampunk",
+			"fantasybutterflies",
+			"lines",
+			"comic",
+			"forms",
+			"mystic"
+			],
+		"customTheme": "",
+		"onlineCovers": false,
+		"onlineCoversSave": false,
+		"startSound": "/home/dietpi/MuPiBox/sysmedia/sound/startup.wav",
+		"shutSound": "/home/dietpi/MuPiBox/sysmedia/sound/shutdown.wav",
+		"startVolume": "40",
+		"maxVolume": "100",
+		"startSplash": "/boot/splash.png",
+		"shutSplash": "/home/dietpi/MuPiBox/sysmedia/images/goodbye.png",
+		"audioDevice": "Master",
+		"mediaCheckTimer": "300",
+		"ttsLanguage": "en",
+		"googlettslanguages": [
+			{
+				"iso639-1": "ar",
+				"Language": "Arabic"
+			},
+			{
+				"iso639-1": "zh", 
+				"Language": "Chinese"
+			},
+			{
+				"iso639-1": "cs",
+				"Language": "Czech"
+			},
+			{
+				"iso639-1": "da",
+				"Language": "Danish"
+				},
+			{
+				"iso639-1": "nl",
+				"Language": "Dutch"
+			},
+			{
+				"iso639-1": "en",
+				"Language": "English"
+			},
+			{
+				"iso639-1": "fi",
+				"Language": "Finnish"
+			},
+			{
+				"iso639-1": "fr",
+				"Language": "French"
+			},
+			{
+				"iso639-1": "de",
+				"Language": "German"
+			},
+			{
+				"iso639-1": "el",
+				"Language": "Greek"
+			},
+			{
+				"iso639-1": "hi",
+				"Language": "Hindi"
+			},
+			{
+				"iso639-1": "it",
+				"Language": "Italian"
+			},
+			{
+				"iso639-1": "ja",
+				"Language": "Japanese"
+			},
+			{
+				"iso639-1": "no",
+				"Language": "Norwegian"
+			},
+			{
+				"iso639-1": "pl",
+				"Language": "Polish"
+			},
+			{
+				"iso639-1": "pt",
+				"Language": "Portuguese"
+			},
+			{
+				"iso639-1": "ru",
+				"Language": "Russian"
+			},
+			{
+				"iso639-1": "es",
+				"Language": "Spanish, Castilian"
+			},
+			{
+				"iso639-1": "sv",
+				"Language": "Swedish"
+			},
+			{
+				"iso639-1": "tr",
+				"Language": "Turkish"
+			},
+			{
+				"iso639-1": "uk",
+				"Language": "Ukrainian"
+			}
+			],
+		"AudioDevices": [
+			{
+				"tname": "MAX98357A bcm2835-i2s-HiFi HiFi-0",
+				"ufname": "MAX98357A bcm2835-i2s-HiFi HiFi-0"
+			},
+			{
+				"tname": "rpi-bcm2835-3.5mm",
+				"ufname": "Onboard 3.5mm output"
+			},
+			{
+				"tname": "rpi-bcm2835-hdmi",
+				"ufname": "Onboard HDMI output"
+			},
+			{
+				"tname": "allo-boss-dac-pcm512x-audio",
+				"ufname": "Allo Boss DAC"
+			},
+			{
+				"tname": "allo-boss2-dac-audio",
+				"ufname": "Allo Boss2 DAC"
+			},
+			{
+				"tname": "allo-digione",
+				"ufname": "Allo DigiOne"
+			},
+			{
+				"tname": "allo-katana-dac-audio",
+				"ufname": "Allo Katana DAC"
+			},
+			{
+				"tname": "allo-piano-dac-pcm512x-audio",
+				"ufname": "Allo Piano DAC"
+			},
+			{
+				"tname": "allo-piano-dac-plus-pcm512x-audio",
+				"ufname": "Allo Piano DAC 2.1"
+			},
+			{
+				"tname": "applepi-dac",
+				"ufname": "ApplePi DAC (Orchard Audio)"
+			},
+			{
+				"tname": "dionaudio-loco",
+				"ufname": "Dion Audio LOCO"
+			},
+			{
+				"tname": "dionaudio-loco-v2",
+				"ufname": "Dion Audio LOCO V2"
+			},
+			{
+				"tname": "googlevoicehat-soundcard",
+				"ufname": "Google AIY voice kit"
+			},
+			{
+				"tname": "hifiberry-amp",
+				"ufname": "HifiBerry AMP / AMP+"
+			},
+			{
+				"tname": "hifiberry-dac",
+				"ufname": "HifiBerry DAC / MiniAmp"
+			},
+			{
+				"tname": "hifiberry-dacplus",
+				"ufname": "HifiBerry DAC+ / DAC+ Pro / AMP2"
+			},
+			{
+				"tname": "hifiberry-dacplusadc",
+				"ufname": "HifiBerry DAC+ADC"
+			},
+			{
+				"tname": "hifiberry-dacplusadcpro",
+				"ufname": "HifiBerry DAC+ADC Pro"
+			},
+			{
+				"tname": "hifiberry-dacplusdsp",
+				"ufname": "HifiBerry DAC+DSP"
+			},
+			{
+				"tname": "hifiberry-dacplushd",
+				"ufname": "HifiBerry DAC+ HD"
+			},
+			{
+				"tname": "hifiberry-digi",
+				"ufname": "HifiBerry Digi / Digi+"
+			},
+			{
+				"tname": "hifiberry-digi-pro",
+				"ufname": "HifiBerry Digi+ Pro"
+			},
+			{
+				"tname": "i-sabre-q2m",
+				"ufname": "AudioPhonics I-Sabre ES9028Q2M / ES9038Q2M"
+			},
+			{
+				"tname": "iqaudio-codec",
+				"ufname": "IQaudIO Pi-Codec HAT"
+			},
+			{
+				"tname": "iqaudio-dac",
+				"ufname": "IQaudIO DAC audio card"
+			},
+			{
+				"tname": "iqaudio-dacplus",
+				"ufname": "Pi-DAC+, Pi-DACZero, Pi-DAC+ Pro, Pi-DigiAMP+"
+			},
+			{
+				"tname": "iqaudio-digi-wm8804-audio",
+				"ufname": "Pi-Digi+"
+			},
+			{
+				"tname": "usb-dac",
+				"ufname": "Any USB Audio DAC (Auto detection)"
+			}
+			],
+		"AudioDevice": "hifiberry-dac",
+		"resume": 9,
+		"listviewTimer": 2.5,
+		"settingsAccessTimer": 3,
+		"version": ""
+	},
+	"interfacelogin": {
+		"state": false,
+		"password": "$2y$10$tA27/5vXFUPgjfjfi7dpTuk.1yOffsg6kuSDQBGTv4sjpVkRlhd76"
+	},
+	"spotify": {
+		"deviceId": "",
+		"clientId": "",
+		"clientSecret": "",
+		"accessToken": "",
+		"refreshToken": "",
+		"maxcachesize": 1073741824,
+		"cachepath": "/home/dietpi/.cache/spotify",
+		"cachestate": true
+	},
+	"nas": {
+		"address": "",
+		"https": false,
+		"account": "",
+		"password": "",
+		"rememberMe": false,
+		"artistFolders": []
+	},
+	"timeout": {
+		"idlePiShutdown": "0",
+		"idleDisplayOff": "10",
+		"pressDelay": "2"
+	    },
+	"playtimeLimit": {
+		"enabled": false,
+		"resetHour": 0,
+		"graceMode": "track",
+		"limitsMinutes": {
+			"mon": 60,
+			"tue": 60,
+			"wed": 60,
+			"thu": 60,
+			"fri": 60,
+			"sat": 60,
+			"sun": 60
+		}
+	},
+	"quietHours": {
+		"enabled": false,
+		"graceMode": "track",
+		"schedule": {
+			"mon": [],
+			"tue": [],
+			"wed": [],
+			"thu": [],
+			"fri": [],
+			"sat": [],
+			"sun": []
+		}
+	},
+	"playbackOverride": {
+		"allowUntil": 0,
+		"forceBlockUntil": 0
+	},
+	"shim": {
+		"poweroffPin": "4",
+		"triggerPin": "17",
+		"cutPin": "27",
+		"ledPin": "13",
+		"ledBrightnessMax": "100",
+		"ledBrightnessMin": "10"
+	},
+	"chromium": {
+		"debug": "0",
+		"resX": "800",
+		"resY": "480",
+		"gpu": false,
+		"sccrollanimation": false,
+		"cachepath": "/home/dietpi/.mupibox/chromium_cache",
+		"cachesize": "128",
+		"kiosk": true
+	},
+	"pm2": {
+		"ramlog": "0"
+	},
+	"telegram": {
+		"token": "",
+		"active": false,
+		"chatId": "",
+		"notifyPlayback": false
+	},
+	"mqtt": {
+		"active": false,
+		"broker": "mqtt-example-broker.com",
+		"port": "1883",
+		"topic": "MuPiBox/Boxname",
+		"clientId": "MuPiBox",
+		"username": "",
+		"password": "",
+		"refresh": "5",
+		"refreshIdle": "30",
+		"timeout": "60",
+		"debug": false,
+		"ha_active": false,
+		"ha_topic": "homeassistant"
+	},
+	"wled": {
+		"active": false,
+		"baud_rate": "115200",
+		"com_port": "/dev/ttyUSB0",
+		"startup_id": "",
+		"main_id": "",
+		"shutdown_id": "",
+		"brightness_default": "255",
+		"brightness_dimmed": "128",
+		"boot_active": false,
+		"shutdown_active": false
+	},
+	"mupihat": {
+		"battery_types": [
+			{
+				"name": "Ansmann 2S1P",
+				"config": {
+					"v_100": "8100",
+					"v_75": "7800",
+					"v_50": "7400",
+					"v_25": "7000",
+					"v_0": "6700",
+					"th_warning": "7000",
+					"th_shutdown": "6800"
+				}
+			},
+			{
+				"name": "ENERpower 2S2P 10.000mAh",
+				"config": {
+						"v_100": "8200",
+						"v_75": "7700",
+						"v_50": "7400",
+						"v_25": "7000",
+						"v_0": "6400",
+						"th_warning": "6700",
+						"th_shutdown": "6600",
+						"vreg": "8300"
+				}
+			},
+			{
+				"name": "ENERpower 2S3P 15.000mAh",
+				"config": {
+						"v_100": "8200",
+						"v_75": "7700",
+						"v_50": "7400",
+						"v_25": "7000",
+						"v_0": "6400",
+						"th_warning": "6700",
+						"th_shutdown": "6600",
+						"vreg": "8300"
+				}
+			},
+			{
+				"name": "USB-C mode (no battery)",
+				"config": {
+						"v_100": "1",
+						"v_75": "1",
+						"v_50": "1",
+						"v_25": "1",
+						"v_0": "1",
+						"th_warning": "0",
+						"th_shutdown": "0"
+				}
+			},
+			{
+				"name": "Custom",
+				"config": {
+					"v_100": "8100",
+					"v_75": "7800",
+					"v_50": "7400",
+					"v_25": "7000",
+					"v_0": "6700",
+					"th_warning": "7000",
+					"th_shutdown": "6800"
+				}
+			}
+		],
+		"selected_battery": "USB-C mode",
+		"current_limit": [
+            {
+                "name": "safe",
+                "IINDMP": "1790"
+            },
+            {
+                "name": "medium",
+                "IINDMP": "2200"
+            },
+            {
+                "name": "high",
+                "IINDMP": "2700"
+            }
+        ],
+		"hat_active": false
+	},
+	"fan": {
+		"fan_active": false,
+		"fan_gpio": "12",
+		"fan_temp_100": "75",
+		"fan_temp_75": "65",
+		"fan_temp_50": "55",
+		"fan_temp_25": "45"
+	},
+	"rotary": {
+		"active": false,
+		"button": "off",
+		"step": 5
+	}
+}
+

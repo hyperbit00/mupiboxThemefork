@@ -1,0 +1,439 @@
+<!--
+  H2: collapse 22 separate `(spotify$ | async)` and 6 separate
+  `(local$ | async)` async-pipe subscribers down to one each via @let.
+  Each polling tick previously triggered 28 individual subscriptions
+  + 28 micro-tasks on default change-detection; on the RPi-Chromium
+  kiosk that was visible CD jank during playback. @let keeps the
+  default CD strategy (no need for markForCheck() audit across this
+  component's many subscribe-bodies) but uses one shared subscription
+  per stream.
+-->
+@let spotify = spotify$ | async;
+@let local = local$ | async;
+
+<ng-template #albumTpl>
+      @if (media.type ==='spotify' && currentPlayedSpotify?.currently_playing_type !== 'episode') {
+        <div>{{spotify?.item.album.name}}</div>
+      } @else {
+        @if (media.showid && spotify?.show_details) {
+          <div>{{spotify?.show_details?.name}}</div>
+        } @else if (media.audiobookid && spotify?.audiobook) {
+          <div>{{spotify?.audiobook?.name}}</div>
+        } @else {
+          @if (media.type ==='library' || media.type ==='nas') {
+            <div>{{local?.album}}</div>
+          } @else {
+            @if (media.type ==='rss') {
+              <div>{{media.artist}}</div>
+            } @else {
+              <div>{{media.title}}</div>
+            }
+          }
+        }
+      }
+</ng-template>
+<ng-template #trackTpl>
+      @if (media.type ==='spotify' && currentPlayedSpotify?.currently_playing_type !== 'episode') {
+        <div>{{spotify?.item.name}}</div>
+      } @else {
+        @if (media.showid && spotify?.show_details) {
+          <div>{{spotify?.item?.name}}</div>
+        } @else if (media.audiobookid && spotify?.audiobook) {
+          <div>{{spotify?.item?.name}}</div>
+        } @else {
+          @if (media.type ==='library' || media.type ==='nas') {
+            <div>{{local?.currentTrackname}}</div>
+          } @else {
+            @if (media.type ==='rss') {
+              <div>{{media.title}}</div>
+            } @else {
+              <div></div>
+            }
+          }
+        }
+      }
+</ng-template>
+<ng-template #counterTpl>
+      @if (media.type ==='library' || media.type ==='nas') {
+        <div>{{local?.currentTracknr}}/{{local?.totalTracks}}</div>
+      } @else {
+        @if (media.type ==='spotify') {
+          @if (media.playlistid && spotify?.playlist?.total_tracks && spotify?.playlist?.total_tracks > 0) {
+            <!-- Playlist -->
+            <div>{{spotify?.playlist?.current_track_position}}/{{spotify?.playlist?.total_tracks}}</div>
+          } @else if (media.showid && spotify?.show_details) {
+            <!-- Show/Podcast -->
+            <div>{{spotify?.show_details?.current_episode_position}}/{{spotify?.show_details?.total_episodes}}</div>
+          } @else if (media.audiobookid && spotify?.audiobook) {
+            <!-- Audiobook -->
+            <div>{{spotify?.audiobook?.current_chapter_position}}/{{spotify?.audiobook?.total_chapters}}</div>
+          } @else if (currentPlayedSpotify?.currently_playing_type !== 'episode' && spotify?.item.album.total_tracks > 0) {
+            <!-- Regular album -->
+            <div>{{spotify?.item.track_number}}/{{spotify?.item.album.total_tracks}}</div>
+          } @else {
+            <!-- Fallback - no track info available -->
+            <div></div>
+          }
+        } @else {
+          <!-- Non-Spotify content (Library) -->
+          <div></div>
+        }
+      }
+</ng-template>
+
+<ion-header class="player-header" [class.km-r2]="r2()">
+  @if (r2()) {
+    <!-- km themes, design round 2 (§3): minimise/back, album and track, "Hören mit" (only with a paired headset),
+         the volume, WiFi/battery with the listening time -->
+    <div class="km-bar km-bar-player">
+      <button class="km-hbtn" type="button" (click)="backFromPlayer()">
+        @if (backAction() === 'minimize') {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 9l6.5 6.5L18.5 9" /></svg>
+        } @else {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5.5L8.5 12l6.5 6.5" /></svg>
+        }
+      </button>
+      <div class="km-htitle kp-titles">
+        <span class="kp-t1" #themeFontSource><ng-container *ngTemplateOutlet="albumTpl"></ng-container></span>
+        <span class="kp-t2"><ng-container *ngTemplateOutlet="trackTpl"></ng-container></span>
+      </div>
+      <!-- the output capsule (§4): speaker | headset (only with a paired device), the volume -->
+      <mupi-output-switch [choosable]="outputChoosable()" [volume]="local?.volume" [output]="output()" [busy]="outputBusy()" [notFound]="outputNotFound()" (choose)="outputSwitchTap($event)"></mupi-output-switch>
+      <mupi-km-status-group></mupi-km-status-group>
+    </div>
+  } @else {
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button [icon]="km() && backAction() === 'minimize' ? 'arrow-down-outline' : 'arrow-back-outline'" defaultHref="/home" [routerAnimation]="coverFlip.returnAnimation"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="toolbar-album" #themeFontSource>
+      <ng-container *ngTemplateOutlet="albumTpl"></ng-container>
+    </ion-title>
+    <ion-title class="toolbar-tracktitle">
+      <ng-container *ngTemplateOutlet="trackTpl"></ng-container>
+    </ion-title>
+    <ion-title class="toolbar-tracknumber" slot="end">
+      <!-- the volume, with where the box plays: a tap chooses speaker or Bluetooth ("Hören mit", see openOutput) -->
+      <div class="km-vol" [class.out-tap]="outputChoosable()" (click)="openOutput()">@if (km()) {<ion-icon [name]="outputOnBluetooth() ? 'headset' : 'volume-medium'"></ion-icon>{{local?.volume}} %} @else { @if (outputOnBluetooth()) {<ion-icon name="headset"></ion-icon>}{{local?.volume}}% }</div>
+      <ng-container *ngTemplateOutlet="counterTpl"></ng-container>
+    </ion-title>
+    <span slot="end" class="mupihat-icon-container"><mupi-status></mupi-status></span>
+  </ion-toolbar>
+  }
+</ion-header>
+
+<!-- km themes: the headset switch did not reach the device (one headset, no window) - below the header, fades out -->
+@if (r2() && outputNotFound() && !outputOpen()) {
+  <div class="kp-toast">{{ displayTexts.text('outputHeadsetNotFound') }}</div>
+}
+
+<ion-content class="player-content" [class.tracklist-active]="showTrackList">
+  @if (showTrackList && r2()) {
+    <!-- km themes, design round 2 (§5): cover and "Zu" on the left, the titles in the middle (58 px rows, the current one
+         in the accent colour), big buttons on the right that turn a page instead of fine scrolling -->
+    <div class="kt">
+      <div class="kt-side">
+        <img class="kt-cover" [src]="shownCover()" alt="" (error)="coverFailed()">
+        <button class="kt-close" type="button" (click)="closeTrackList()"><ion-icon name="close"></ion-icon>{{ displayTexts.text('closeShort') }}</button>
+      </div>
+      <div class="kt-main">
+        <div class="kt-head">{{ trackOfText() }}</div>
+        <div class="kt-scroll" #ktScroll [style.font-family]="listFontFamily">
+          @if (loadingTrackList) {
+            <div class="kt-loading"><ion-spinner></ion-spinner></div>
+          }
+          @for (entry of trackList; track entry.id) {
+            <button class="kt-row" type="button" [class.kt-on]="isCurrentTrack(entry)" (click)="playTrackFromList(entry)">
+              <span class="kt-num">
+                @if (isCurrentTrack(entry)) {
+                  <ion-icon name="play"></ion-icon>
+                } @else {
+                  {{ entry.position }}
+                }
+              </span>
+              <span class="kt-name">{{ entry.name }}@if (entry.artist) {<small>{{ entry.artist }}</small>}</span>
+              @if (entry.duration_ms) {
+                <span class="kt-dur">{{ formatDuration(entry.duration_ms) }}</span>
+              }
+            </button>
+          } @empty {
+            @if (!loadingTrackList) {
+              <div class="kt-empty">No tracks available.</div>
+            }
+          }
+        </div>
+      </div>
+      <div class="kt-pager">
+        <button class="kt-page" type="button" (click)="pageTrackList(-1)" aria-label="up"><ion-icon name="chevron-up"></ion-icon></button>
+        <button class="kt-page" type="button" (click)="pageTrackList(1)" aria-label="down"><ion-icon name="chevron-down"></ion-icon></button>
+      </div>
+    </div>
+  } @else if (showTrackList) {
+    <div class="km-tl-wrap">
+    <!-- every theme: cover and "close" on the left (was the km themes' only; the others had a back arrow in the header) -->
+    <div class="km-tl-side">
+      <img [src]="shownCover()" alt="" (error)="coverFailed()">
+      <button class="km-tl-close" (click)="closeTrackList()"><ion-icon name="close"></ion-icon>{{ displayTexts.text('closeShort') }}</button>
+    </div>
+    <ion-list class="tracklist" [style.font-family]="listFontFamily" [style.--ion-font-family]="listFontFamily">
+      @if (loadingTrackList) {
+        <div class="tracklist-loading"><ion-spinner></ion-spinner></div>
+      }
+      @for (entry of trackList; track entry.id) {
+        <ion-item button [class.current-track]="isCurrentTrack(entry)" (click)="playTrackFromList(entry)">
+          <div slot="start" class="track-position">
+            @if (isCurrentTrack(entry)) {
+              <ion-icon name="play"></ion-icon>
+            } @else {
+              {{ entry.position }}
+            }
+          </div>
+          <ion-label>
+            <h2>{{ entry.name }}</h2>
+            @if (entry.artist) {
+              <p>{{ entry.artist }}</p>
+            }
+          </ion-label>
+          @if (entry.duration_ms) {
+            <div slot="end" class="track-duration">{{ formatDuration(entry.duration_ms) }}</div>
+          }
+        </ion-item>
+      } @empty {
+        @if (!loadingTrackList) {
+          <ion-item>
+            <ion-label>No tracks available.</ion-label>
+          </ion-item>
+        }
+      }
+    </ion-list>
+    </div>
+  } @else if (r2()) {
+    <!-- km themes, design round 2 (§3): cover left with the track button below it like a handle, the controls on the
+         right (on the old themes' panel). Radio: a bigger cover, "Live" instead of the bar, no track buttons. -->
+    @let radio = media.type === 'radio';
+    <div class="kp" [class.kp-radio]="radio">
+      <div class="kp-cover" [class.km-pressing]="pressingCover" (pointerdown)="coverPointerDown()" (pointerup)="coverPointerUp()" (pointerleave)="coverPointerUp()" (pointercancel)="coverPointerUp()">
+        <img [src]="shownCover()" (error)="coverFailed()" draggable="false" ondragstart="return false;" alt="">
+        @if ((media.type === 'radio' || media.type === 'rss') && currentPlayedLocal?.loading) {
+          <div class="km-cover-dots"><i></i><i></i><i></i></div>
+        }
+        @if (media.type === 'spotify' || media.type === 'library' || media.type === 'nas') {
+          <div class="press-indicator" [class.active]="pressingCover" [style.--press-duration.ms]="listViewTimerMs">
+            <svg viewBox="0 0 48 48">
+              <circle class="press-indicator-track" cx="24" cy="24" r="20"></circle>
+              <circle class="press-indicator-progress" cx="24" cy="24" r="20"></circle>
+            </svg>
+          </div>
+        }
+      </div>
+      <!-- (a podcast episode has no track list) -->
+      @if (!radio && media.type !== 'rss') {
+        <button class="kp-tbtn" type="button" (click)="openTrackList()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" /></svg>
+          <span class="kp-tcount">{{ trackCounter(spotify, local) }}</span>
+        </button>
+      }
+      <div class="kp-panel"></div>
+      <div class="kp-ctrl">
+        @if (!radio) {
+          <div class="kp-time">
+            <ion-range #range [(ngModel)]="progress" max="100" (touchend)="seek()" (mouseup)="seek()"></ion-range>
+            @if (kmTimes(); as times) {
+              <div class="km-times"><span>{{ times.position }}</span><span>{{ times.duration }}</span></div>
+            }
+          </div>
+        } @else {
+          <span class="km-live kp-live" [class.km-buffering]="currentPlayedLocal?.loading"><i></i>{{ currentPlayedLocal?.loading ? displayTexts.text('connectingLabel') : displayTexts.text('liveLabel') }}</span>
+        }
+        <div class="kp-row kp-row-main">
+          <button class="kp-btn kp-vol-btn" type="button" (click)="volDown()" aria-label="-">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3 9.2h3.6L11.2 5v14l-4.6-4.2H3z" /><path d="M14.5 12h6" /></svg>
+          </button>
+          <button class="kp-btn kp-play" type="button" (click)="playPause()">
+            <ion-icon [name]="playing ? 'pause' : 'play'"></ion-icon>
+          </button>
+          <button class="kp-btn kp-vol-btn" type="button" (click)="volUp()" aria-label="+">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3 9.2h3.6L11.2 5v14l-4.6-4.2H3z" /><path d="M14.5 12h6M17.5 9v6" /></svg>
+          </button>
+        </div>
+        @if (!radio) {
+          <div class="kp-row kp-row-skip">
+            <button class="kp-btn kp-skip" type="button" [disabled]="this.media.showid" (click)="skipPrev()"><svg class="kp-solid" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="2.8" height="14" rx="1" /><path d="M19 5v14L8.5 12z" /></svg></button>
+            <button class="kp-btn kp-skip" type="button" [disabled]="this.media.showid" (click)="skipNext()"><svg class="kp-solid" viewBox="0 0 24 24" aria-hidden="true"><rect x="16.2" y="5" width="2.8" height="14" rx="1" /><path d="M5 5v14l10.5-7z" /></svg></button>
+          </div>
+          <div class="kp-row kp-row-seek">
+            <button class="kp-btn kp-seek" type="button" (click)="seekBack()"><svg class="kp-solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.5 6v12L3 12zM21 6v12l-8.5-6z" /></svg></button>
+            @if (media.type === 'spotify' && (media.category == 'music' || media.category == 'other')) {
+              <button class="kp-btn kp-seek" type="button" [class.kp-on]="media.shuffle" (click)="toggleshuffle()"><ion-icon name="shuffle-outline"></ion-icon></button>
+            }
+            <button class="kp-btn kp-seek" type="button" (click)="seekForward()"><svg class="kp-solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 6v12L21 12zM3 6v12l8.5-6z" /></svg></button>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <ion-card class="cover-card" [class.km-pressing]="km() && pressingCover" (pointerdown)="coverPointerDown()" (pointerup)="coverPointerUp()" (pointerleave)="coverPointerUp()" (pointercancel)="coverPointerUp()">
+          <img [src]="shownCover()" (error)="coverFailed()" draggable="false" style="-moz-user-select: none;" ondragstart="return false;">
+          @if ((media.type === 'radio' || media.type === 'rss') && currentPlayedLocal?.loading && km()) {
+            <!-- km themes: three bouncing dots on the cover while the stream connects -->
+            <div class="km-cover-dots"><i></i><i></i><i></i></div>
+          } @else if ((media.type === 'radio' || media.type === 'rss') && currentPlayedLocal?.loading) {
+            <!-- Stream is being buffered: a ring in the middle of the cover that gets smaller until playback starts. -->
+            <div class="load-indicator">
+              <svg viewBox="0 0 48 48">
+                <circle class="load-indicator-track" cx="24" cy="24" r="20"></circle>
+                <circle class="load-indicator-ring" [class.waiting]="loadProgress === 0" cx="24" cy="24" [attr.r]="loadRingRadius"></circle>
+              </svg>
+            </div>
+          }
+          @if (media.type === 'spotify' || media.type === 'library' || media.type === 'nas') {
+            <div class="press-indicator" [class.active]="pressingCover" [style.--press-duration.ms]="listViewTimerMs">
+              <svg viewBox="0 0 48 48">
+                <circle class="press-indicator-track" cx="24" cy="24" r="20"></circle>
+                <circle class="press-indicator-progress" cx="24" cy="24" r="20"></circle>
+              </svg>
+            </div>
+          }
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="6">
+        <ion-grid class="controls">
+          <ion-row class="slider-row">
+            @if (media.type !=='radio') {
+              <ion-range #range [(ngModel)]="progress" max="100" (touchend)="seek()" (mouseup)="seek()"></ion-range>
+              @if (km() && kmTimes(); as times) {
+                <div class="km-times"><span>{{ times.position }}</span><span>{{ times.duration }}</span></div>
+              }
+            } @else if (km()) {
+              <!-- km themes: a stream has no end - a "Live" pill instead of the bar -->
+              <span class="km-live" [class.km-buffering]="currentPlayedLocal?.loading"><i></i>{{ currentPlayedLocal?.loading ? displayTexts.text('connectingLabel') : displayTexts.text('liveLabel') }}</span>
+            }
+          </ion-row>
+          <ion-row class="controls-row">
+            <ion-col size="4" class="ion-text-center">
+              <ion-button (click)="volDown()" color="light">
+                @if (km()) {
+                  <svg class="km-vol-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="speaker" d="M3 9.2h3.6L11.2 5v14l-4.6-4.2H3z" /><path class="sign" d="M14.5 12h6" /></svg>
+                } @else {
+                  <ion-icon slot="icon-only" name="volume-low-outline" class="small-icon"></ion-icon>
+                }
+              </ion-button>
+            </ion-col>
+            <ion-col size="4" class="ion-text-center">
+              <ion-button class="km-play" (click)="playPause()" color="light">
+                @if (playing) {
+                  <ion-icon slot="icon-only" name="pause" class="small-icon"></ion-icon>
+                }
+                @if (!playing) {
+                  <ion-icon slot="icon-only" name="play" class="small-icon"></ion-icon>
+                }
+              </ion-button>
+            </ion-col>
+            <ion-col size="4" class="ion-text-center">
+              <ion-button (click)="volUp()" color="light">
+                @if (km()) {
+                  <svg class="km-vol-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="speaker" d="M3 9.2h3.6L11.2 5v14l-4.6-4.2H3z" /><path class="sign" d="M14.5 12h6M17.5 9v6" /></svg>
+                } @else {
+                  <ion-icon slot="icon-only" name="volume-high-outline" class="small-icon"></ion-icon>
+                }
+              </ion-button>
+            </ion-col>
+          </ion-row>
+
+          <!-- km themes: a radio station has neither titles nor an end - only volume and play (as in the design) -->
+          @if (!(km() && media.type === 'radio')) {
+          <ion-row class="controls-row">
+            <ion-col size="6" class="ion-text-center">
+              <ion-button class="km-skip" [disabled]="this.media.showid" (click)="skipPrev()" color="light">
+                <ion-icon slot="icon-only" name="play-skip-back" class="small-icon"></ion-icon>
+              </ion-button>
+            </ion-col>
+            <ion-col size="6" class="ion-text-center">
+              <ion-button class="km-skip" [disabled]="this.media.showid" (click)="skipNext()" color="light">
+                <ion-icon slot="icon-only" name="play-skip-forward" class="small-icon"></ion-icon>
+              </ion-button>
+            </ion-col>
+          </ion-row>
+
+          @if (media.type ==='spotify' && (media.category =='music' || media.category =='other')) {
+            <ion-row class="controls-row">
+              <ion-col size="4" class="ion-text-center">
+                <ion-button class="km-minor" (click)="seekBack()" color="light">
+                  <ion-icon slot="icon-only" name="play-back" class="small-icon"></ion-icon>
+                </ion-button>
+              </ion-col>
+              <ion-col size="4" class="ion-text-center">
+                @if (!media.shuffle) {
+                  <ion-button class="km-minor" (click)="toggleshuffle()" color="light">
+                    <ion-icon slot="icon-only" name="shuffle-outline" class="small-icon"></ion-icon>
+                  </ion-button>
+                }
+                @if (media.shuffle) {
+                  <ion-button class="km-minor" (click)="toggleshuffle()" color="dark">
+                    <ion-icon slot="icon-only" name="shuffle-outline" class="small-icon"></ion-icon>
+                  </ion-button>
+                }
+              </ion-col>
+              <ion-col size="4" class="ion-text-center">
+                <ion-button class="km-minor" (click)="seekForward()" color="light">
+                  <ion-icon slot="icon-only" name="play-forward" class="small-icon"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          } @else {
+            <ion-row class="controls-row">
+              <ion-col size="6" class="ion-text-center">
+                <ion-button class="km-minor" (click)="seekBack()" color="light">
+                  <ion-icon slot="icon-only" name="play-back" class="small-icon"></ion-icon>
+                </ion-button>
+              </ion-col>
+              <ion-col size="6" class="ion-text-center">
+                <ion-button class="km-minor" (click)="seekForward()" color="light">
+                  <ion-icon slot="icon-only" name="play-forward" class="small-icon"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          }
+          }
+        </ion-grid>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  }
+</ion-content>
+
+<!-- "Hören mit": the box or a paired Bluetooth device, one tile each (see chooseOutput) -->
+@if (outputOpen()) {
+  <div class="out-dim" (click)="closeOutput()">
+    <div class="out-panel" (click)="$event.stopPropagation()">
+      <h2>{{ displayTexts.text('outputTitle') }}</h2>
+      <button class="out-close" (click)="closeOutput()" aria-label="close"><ion-icon name="close"></ion-icon></button>
+      <div class="out-tiles" [style.--out-cols]="(output()?.devices?.length ?? 0) > 1 ? 3 : 2">
+        <button class="out-tile" [class.on]="output()?.current === 'box'" (click)="chooseOutput('box')">
+          @if (output()?.current === 'box') {<span class="out-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>}
+          @if (outputBusy() === 'box') {<span class="out-spin"></span>} @else {
+            <svg class="out-icon" viewBox="0 0 24 24"><path class="fill" d="M4 9h3.5L12 5v14l-4.5-4H4z" /><path d="M16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10" /></svg>
+          }
+          <b>{{ displayTexts.text('outputBox') }}</b><small>{{ displayTexts.text('outputBoxSub') }}</small>
+        </button>
+        @for (d of output()?.devices ?? []; track d.mac) {
+          <button class="out-tile" [class.on]="output()?.current === d.mac" [class.out-missing]="outputMissing() === d.mac" (click)="chooseOutput(d.mac)">
+            @if (output()?.current === d.mac) {<span class="out-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>}
+            @if (outputBusy() === d.mac) {<span class="out-spin"></span>} @else if (d.kind === 'speaker') {
+              <svg class="out-icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3" /><circle cx="12" cy="14" r="3" /><circle class="fill" cx="12" cy="7.5" r="1" /></svg>
+            } @else {
+              <svg class="out-icon" viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0 1 16 0v3" /><path class="fill" d="M4 15h3v6H5a1 1 0 0 1-1-1zM20 15h-3v6h2a1 1 0 0 0 1-1z" /></svg>
+            }
+            <b translate="no">{{ d.name }}</b>
+            <small>{{ outputBusy() === d.mac ? displayTexts.text('outputConnecting') : outputMissing() === d.mac && r2() ? displayTexts.text('outputNotFound') : output()?.current === d.mac && km() ? '● ' + displayTexts.text('outputPlaying') : d.connected ? displayTexts.text('outputConnected') : displayTexts.text('outputOff') }}</small>
+          </button>
+        }
+      </div>
+      @if (outputNotFound()) {<div class="out-toast">{{ displayTexts.text('outputNotFound') }}</div>}
+    </div>
+  </div>
+}

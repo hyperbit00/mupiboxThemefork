@@ -1,0 +1,13 @@
+[Unit]
+Description=Wifi autoconnect to best network
+After=local-fs.target sysinit.target network.target
+
+[Service]
+Type=simple
+RemainAfterExit=true
+ExecStart=/usr/local/bin/mupibox/autoswitch_wifi.sh
+KillMode=process
+PIDFile=/run/mupi_autoconnect-wifi.pid
+
+[Install]
+WantedBy=multi-user.target

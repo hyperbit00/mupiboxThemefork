@@ -1,0 +1,465 @@
+<h3>DEV 5.0.8 - changes compared to 5.0.7</h3>
+<b>Themes</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>A new header on every theme: one row, 64 px high - history, categories, "Now playing", WiFi and battery. A long press on WiFi and battery still opens the settings. The listening time is a small chip below the header on every page.</li>
+<li id='linews' class='linews'>"Now playing": the player can be left while the music goes on - a pill in the header shows the cover, the title and a stop button, a tap opens the player again. In the app: Settings › Audio › "Back in the player" - minimise (the default) or stop.</li>
+<li id='linews' class='linews'>The player rearranged: the track button ("3 / 19") sits below the cover like a handle and opens the track list (a long press on the cover still does), bigger buttons. Volume and output share one capsule in the header: box | headphones (only with a paired Bluetooth device) - one tap switches, with several devices the window "Listen with" opens, and a headset that is not found is said so.</li>
+<li id='linews' class='linews'>The track list new: the cover and "Close" on the left, the tracks as rows, paging on the right.</li>
+<li id='linews' class='linews'>The 37 older themes (blue, steampunk ...): a band behind the header and a panel behind the player's controls in their colours; new backgrounds for blue, wood and light, matrix adjusted; pikachu, steampunk and matrix use their own font for the whole screen. Daily limit, quiet time and "not reachable" cover the screen fully - the choice behind no longer shows through. Eight themes with well-known characters have mascots of their own; steampunk shows its gear in the stage view too, and the 16 themes with a font of their own use it for the name in the stage view.</li>
+<li id='linews' class='linews'>coverflow (by Andreas): the same header with categories, "Now playing" and minimising, and player, "Listen with" and track list in coverflow's own look (black, square covers with a mirror image). The cover band stays as it is.</li>
+<li id='linews' class='linews'>Tag &amp; Nacht: at night the header, the symbols and the buttons are light again (they stayed dark and were hard to read).</li>
+<li id='linews' class='linews'>The listening-time chip hides while the "Listen with" window is open; the tick on the chosen tile is visible again on light circles.</li>
+<li id='linews' class='linews'>New theme previews in the app and in MuPi-Conf: every theme as it really looks on the display, all with the same made-up covers (no real audio plays any more). WALL·E has a picture now. They are made by tools/theme-preview/render.mjs, which takes every theme by itself - a new theme gets its picture without any other change.</li>
+</ul>
+<b>Display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Covers no longer jump on their own when the library changes (Smart-Sync, NAS folders, an upload): a list loaded again in the background stays on the cover it was on, found by its name, not by its place - an entry added or removed in front of it moved the list to another cover. Only the finished list is shown, without loading dots; nothing happens at all when the list looks the same as before, and on an error it stays as it is. A poll that got no answer (the box busy, e.g. with a sync) no longer counts as a change: it made the lists load twice. Covers that stay are no longer built anew (they flickered), in the start page, the album lists, the stage view and coverflow. The "new" dot, the progress bar and the tick of podcast episodes are really shown now (the list lost them on the way to the screen).</li>
+</ul>
+<b>System</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Update and installation no longer add a second gpio-poweroff line to /boot/config.txt when one is there already, also inside a line that loads further overlays (e.g. a display driver) - such boxes hung at shutdown and could not be started with the button. A new line uses the pin set for the OnOff SHIM (it was always 4). A line added by an earlier update stays: remove it by hand once.</li>
+</ul>
+<h3>DEV 5.0.7 - changes compared to 5.0.6</h3>
+<b>New player: mpv</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Local albums, NAS, podcasts and radio play with mpv instead of mplayer, which has hardly been maintained for years: streams reconnect after a drop, going on where you left off starts right there (no audible seek after the start), tracks follow each other without a gap, and the track number comes from the playlist itself. The update installs mpv; mplayer stays installed as a fallback - "playerEngine": "mplayer" in mupiboxconfig.json brings it back, and a box without mpv plays with mplayer.</li>
+<li id='linews' class='linews'>New: Settings › Audio › Volume › "Level the loudness" (soft or strong) - a quiet audio play is no longer quieter than the album before it. Changed while playing, without a break. Spotify plays through its own player and stays as it is.</li>
+<li id='linews' class='linews'>The start sound, the low battery sound of the MuPiHAT and MP3 announcements play with mpv too.</li>
+</ul>
+<b>Podcasts</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>When the box cannot read a podcast's feed, the app says why instead of "No episodes found": server not found, reachable over IPv6 only (the box has no IPv6), not reachable, a server in the home network that is not allowed yet (with a button to allow it), an error answer, or no feed at the address.</li>
+</ul>
+<b>Covers</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Only one of cover and artist cover set: it is used for both - an entry without a cover of its own shows the artist's picture on its tile, in the resume list, in the player and at "Now playing" in the app (the artist tile already took the cover).</li>
+</ul>
+<b>Display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>A category with a big library shows what is there after a few seconds, the rest follows - before, it showed only loading dots until every Spotify entry was looked up (minutes after an update), and after a minute the page was even loaded again, which started it over.</li>
+<li id='linews' class='linews'>The lists of the categories the box keeps survive an update (now in server/config, which the update keeps) - the first tap after an update no longer makes them from scratch.</li>
+<li id='linews' class='linews'>Spotify: the box's cache of Spotify's answers (and of the covers) survives an update as well - every entry was asked for again after an update, with a big library minutes of loading and a long way into Spotify's rate limit. The cache holds 4000 answers now (1000 before: a big library threw out its own entries while being made). A list made while Spotify blocked requests or a lookup failed is shown but not kept as complete - it is made again later instead of showing placeholders for hours. A Spotify search entry fetches its first 100 hits (before: every page of a thousand, a hundred requests for one entry).</li>
+</ul>
+<b>Network</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>The WiFi page shows the box's IPv6 address too, when it has one.</li>
+<li id='linews' class='linews'>Network settings rearranged: WiFi now also holds its hardware (onboard WiFi, USB driver), the watchdog and its address (DHCP); the cable has a page of its own, LAN. "Network options" are gone. Cards pinned to the start page follow to their new place.</li>
+<li id='linews' class='linews'>"Get a new address" on the WiFi and on the LAN page renews only that connection's address (before: all of them were released, but only the WiFi was started again). The DHCP timeout is on both pages - one value for both.</li>
+<li id='linews' class='linews'>The switch "Remote control via IP" is gone from the app: nothing read its value any more (the display always reaches the player on the box itself).</li>
+<li id='linews' class='linews'>A fixed IP address per saved WiFi network (the others keep DHCP), in the app and on the display. Before saving, a test checks it in the network the box is in, without dropping the connection: router and range, the address free, the router answering the new address (tried as a second address for a few seconds), the DNS server. The box switches at once, the WiFi connection stays. If it does not reach its router with the fixed address - right after saving or later in that network - it goes back to DHCP by itself and keeps the values paused to correct them; the app and the display say so.</li>
+<li id='linews' class='linews'>LAN for a PC plugged straight into the box: the router is optional for a fixed address (without one the internet stays with the WiFi).</li>
+<li id='linews' class='linews'>The display no longer loses its WiFi symbol for good while the box is online: the online state in the network file is checked against the real one every 10 s and corrected (a write lost to the network file's own refresh left "offline" in it until the next start) (by Andreas).</li>
+</ul>
+<b>Display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>"WiFi settings" is now "Network settings": WiFi or LAN chosen at the top (the LAN settings also without the cable in use), "Renew address" for WiFi and LAN, and "Address" for every saved WiFi network - DHCP or fixed, with an onscreen keypad and the test. A way back when the box cannot be reached over the network.</li>
+</ul>
+<b>Review fixes</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Security: the LAN settings check every address given, also under DHCP (an unchecked one could carry a line break and so a line of its own into /etc/network/interfaces); addresses of the box itself written as IPv6 (::ffff:7f00:1, as a URL parser writes 127.0.0.1) are recognised by the player's playlist check and the home-network feed check.</li>
+<li id='linews' class='linews'>Spotify Smart Sync removes nothing from the library in a run in which a playlist, a pinned album or an artist could not be read (timeout, rate limit) - their entries and overrides stay, the next complete run tidies up.</li>
+<li id='linews' class='linews'>Fixed WiFi addresses: saving from the app and the display at the same time no longer loses one of them; a network whose profile points at a missing address goes back to DHCP by itself.</li>
+<li id='linews' class='linews'>Update: the box's programs stop before the user data is copied (a change saved meanwhile was replaced by the older copy); a backup of a restore that failed is kept under a dated name instead of being thrown away by the next update, and the failure is said at the end.</li>
+<li id='linews' class='linews'>Second review round - files written in one piece: a power cut while the box wrote a podcast's feed cache, a cover, the day's playtime or the offline podcast list left half a file (an empty podcast, a cut-off picture, the day's count at zero, kept episodes deleted as strays). The battery log is only rewritten when something expired (2 MB to the card every hour before). Covers are touched for the cache's order at most once an hour.</li>
+<li id='linews' class='linews'>Player: a second pause or play within a second (display and app, Telegram, an announcement) no longer toggles local playback twice; a Spotify pause that failed does not count as paused.</li>
+<li id='linews' class='linews'>Security: a WiFi password with a quote in it is set as its key (worked out as wpa_passphrase does) instead of breaking the command; the NAS address cannot point at the box itself; file keys of the app's log viewer, JSON editor, shares and driver installer only accept their own names; a data.json that is not a list is reported by add/edit/delete instead of ending the server.</li>
+<li id='linews' class='linews'>Network: WiFi names with umlauts are found again for a fixed address or a new password; the watchdog for a fixed address counts its misses also while DietPi's WiFi monitor restarts the WiFi in between (it never got to its third miss before); a fixed address saved while the box was in another network is not reported as "test passed"; after saving, the WiFi list shows the address at once; a second WiFi adapter in the same network does not keep the same fixed address; the sound card's driver is not re-bound while PulseAudio is restarting; the LAN settings keep several DNS servers (dietpi-config's way) and read "false" as off; the offline media lists are written with their text as it is (double spaces in titles were collapsed).</li>
+<li id='linews' class='linews'>Update: an aborted update is reported as failed to the admin interface and to curl | bash too (not "Update finished"), and starts the idle shutdown again; the WiFi monitor is only restarted when it runs (one switched off stays off); the udev rules for the USB WiFi adapter and the LAN cable are installed for every version that has the script (only dev versions got them - on a release, the cable did not switch between LAN and WiFi).</li>
+<li id='linews' class='linews'>Display: an artist's album list that came back short while Spotify blocked requests is loaded anew at the next tap instead of being kept for ten minutes; leaving a shuffle album within its first seconds no longer leaves shuffle on in Spotify (the next audiobook played in random order); the NAS tab gives up after 50 s when the NAS is asleep instead of making the page reload; the kept lists are read again when the backend was still starting; a category made again while the library changed is made for the new version. Spotify paused from elsewhere - the parents' phone over Spotify Connect, or a stall - in the middle of a track: the player stays on the display as paused and its play button goes on (before: back to the list after ten seconds, with a stop); only the end of the album goes back as before. And the end of an album goes back to the list even with Spotify's autoplay on (a setting of the account): Spotify then went straight on with tracks of other albums, which the display showed under the album's name; now the box stops them and shows the list again.</li>
+<li id='linews' class='linews'>App: when the start gets stuck at "Verbinde mit der Box …" (the box's backend busy or restarting, a request never answered), the screen says after 12 s which step it is at and offers "Neu laden" and "Zur Anmeldung"; a request the box does not answer within 15 s ends with a message instead of waiting for ever. If app.js itself does not load, the page says so after 20 s with a reload button.</li>
+<li id='linews' class='linews'>Battery profiles in a sensible order in the app (the batteries first, "USB-C mode" and "Custom" last). A box without a battery (profile "USB-C mode", a power supply or a power bank on USB-C): the app says "mains power" instead of "0 %" and "battery nearly empty", the MuPiHAT page shows no charge curve and thresholds for it, and the display shows no battery icon even when a battery is fitted but this profile is chosen.</li>
+<li id='linews' class='linews'>Resume list ("Weiterhören") on the display: a podcast episode started from the app left a resume entry without its feed (and with the artist of the last local album), and that one entry made the whole list come up empty. The display now builds such an entry from the library's feed entry, skips an entry without an id, and the box refuses to store entries nothing could be found by again.</li>
+<li id='linews' class='linews'>Playback started from the app: the display shows a podcast episode's title (not the feed's name twice), "Weiterhören" is saved for albums and episodes started from the app or Telegram (it never was before), a stop from the app no longer overwrites the saved position with zeros, and the app's playback card no longer shows the category as the artist of a local album. A stop from the app, Telegram or the sleep timer now closes the display's player page at once (it stayed with a pause button - 100 s for a podcast, for good with an album - and went on saving "Weiterhören" with zeros).</li>
+<li id='linews' class='linews'>Start-up: the WiFi is only restarted when the box got no address within 60 s - since the faster start the start-up script tore down every connection that was just being made (about 30 s more without network after each power-on).</li>
+<li id='linews' class='linews'>Shutting down: whatever plays is stopped first, then the goodbye sound - the music went on, louder, under it (reported by hyperbit).</li>
+<li id='linews' class='linews'>Spotify: a start when Spotify does not know the display's player (it lost its sign-in at start-up without network) lets the display sign in anew and plays then, about 8 s later instead of not at all. At the end of an album's last track the box stops itself, so Spotify's autoplay adds no other album or track any more. Playtime and quiet hours end at a song's end at once (the next track no longer starts and fades out).</li>
+<li id='linews' class='linews'>Spotify: the display's check every 3 minutes whether Spotify still knows its player was refused by the box ("Refused GET /spotify/token" in the log) and never ran - a player Spotify had dropped now connects again by itself.</li>
+<li id='linews' class='linews'>Local albums and episodes: the display goes back to its list a second after the end (it waited 10 s, looking stuck).</li>
+<li id='linews' class='linews'>LAN switch (app and display): shows whether the port is switched off - not whether a cable has a link. Without a cable it read "off" although nothing was switched off, and a switched-off port looked like a pulled cable. The cable has a line of its own now: connected, no cable, or port switched off.</li>
+<li id='linews' class='linews'>A big podcast feed (more than 2 MB) without a readable item list is no longer handed to the slow parser (it blocked the backend for a long time on a Pi 3). The m3u generator's lock keeper ends with its script (killed, it kept the library lock for ever). Piper's input stream closing early no longer ends the server.</li>
+<li id='linews' class='linews'>A fixed LAN address with its own DNS server applies that server now (there is no resolvconf on the box). Offline podcasts: a download that finished while the folder was tidied is no longer deleted, and two changes of the list at once no longer collide. A failed announcement no longer blocks every one after it, and the music comes back in any case. A feed's episode data (ARD download release, end date, moved files) is refreshed even when its first episode is unchanged.</li>
+<li id='linews' class='linews'>Final review (before 5.0.7): the WiFi guard ties a connection to the saved network it was made for (it moved on to another network while its address was being set up: that one's events run as always, its address is not kept in the other); its installation never leaves the WiFi without Debian's action script (on an error that one is put back); a fixed WiFi address that could not be saved is not left active in the running WiFi, and one paused but still in use goes back to DHCP.</li>
+<li id='linews' class='linews'>MuPiHAT switched on or off: mupiboxconfig.json is written next to it and renamed (a write error or power cut left an empty file before, and the error was not reported). The amplifier's driver lines are added where they count for every Pi - a boot configuration ending in a section such as [pi5] gets an [all] before them; lines only under such a section no longer count as there (MuPiHAT and the sound card choice in the app).</li>
+<li id='linews' class='linews'>Spotify: a start that waited for the display to sign in anew no longer plays after a stop or another start in the meantime. The app's album lists of an artist and the cover search keep to Spotify's block (no requests during it; a block met there holds for everything) and say so in the app; the cover search asks for 10 hits (more are refused for newer Spotify apps). On the display, an album no longer ends when the last track was sought back within its last seconds.</li>
+<li id='linews' class='linews'>mpv: a choice made while mpv starts or is started anew after a crash is played once it is up (it was lost); a lost connection to mpv is made again; the loudness levelling is set again on a new mpv; the start position of a file that could not be opened no longer carries over to the next file.</li>
+</ul>
+<b>Web app</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Shares & remote access (Samba, FTP, VNC) moved from Settings › Network to Settings › Services, as the last block "Access to the box". Network shows the connection only: WiFi and LAN (suggested by hyperbit).</li>
+<li id='linews' class='linews'>A power button at the top of every page, next to light/dark: restart or switch off the box, each after a confirmation (suggested by hyperbit). On a narrow phone the buttons at the top are a little smaller, so a page's title still fits.</li>
+<li id='linews' class='linews'>Start page, quick actions: without a daily limit "+15 min" is not shown (it adds to the limit, so it did nothing) - the other three share the row, on the phone and on the desktop; switching the limit on brings it back.</li>
+</ul>
+<b>Sound card, NAS, player</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>WiFi at the start: when an access point dropped the box once while it started, the box took its own working connection down again and again (Debian's wpa_action handled the late "disconnected" after the box was connected again, and each time caused the next one) - the network came after ~45 s instead of ~10 s, going back and forth between two access points. A guard in front of wpa_action lets such a late message go when the box is connected to the same WiFi again; with another WiFi or no connection everything is as before. The update and the installation set it up (mupi_wpa_guard.sh install|remove).</li>
+<li id='linews' class='linews'>Sound card MAX98357A (the MuPiHAT's amplifier, also a board of its own): chosen without switching the MuPiHAT on, the box had no sound card at all - its I2S driver was only written by the MuPiHAT switch. Choosing it writes the driver now (another card without the MuPiHAT takes it out again), and every change is checked: the app says when the card or its driver did not arrive instead of "saved". The sound card page shows the cards the system has found. Newer DietPi (/boot/firmware/config.txt) is taken into account (reported by Andreas).</li>
+<li id='linews' class='linews'>Switching the MuPiHAT off works: the script was a copy of the one switching it on - it wrote the amplifier's driver in instead of taking it out, so the amplifier stayed a second sound card and the sound could go there instead of the 3.5mm output. Both switches set the sound card right away (it was left to the next start, which ran it only once online and with a second restart - without internet the old card stayed), note it for the app and the admin interface, and check what arrived: if something did not, the switch stays as it was. I2C stays on when switching off.</li>
+<li id='linews' class='linews'>NAS folders are listed alphabetically ("Folge 2" before "Folge 10") - the NAS hands them out in its own order (reported by Andreas).</li>
+<li id='linews' class='linews'>Display: a place chosen on the progress bar stays until the player reports it - the dot jumped back to the old place for a moment (reported by Andreas).</li>
+</ul>
+<b>Spotify</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Smart-Sync with a Spotify app created since February 2026: every run ended with INTERNAL_ERROR, so artist subscriptions and albums never came in and old entries were not removed. Spotify gives such apps a playlist's entries only at a new address (/items instead of /tracks) - the sync reads it there now, which works for older apps too. A playlist that cannot be read is skipped instead of ending the run, and artist pictures are fetched one by one where Spotify no longer allows several at once (reported by hyperbit).</li>
+<li id='linews' class='linews'>Smart-Sync asks Spotify for pages it allows such apps: 50 playlist entries (was 100) and 10 albums of an artist (50 for older apps - switched after Spotify's first "Invalid limit"). An artist's album list is kept for 6 hours: the sync every 15 minutes no longer fetches all ~30 pages of a big artist (one with almost 300 albums) each time.</li>
+<li id='linews' class='linews'>Far fewer Spotify requests - Spotify apps under its 2026 rules were blocked for many hours with big artist subscriptions: the display builds the tiles of Spotify albums from the library (title, cover and now also the release date are kept there by the sync) instead of asking Spotify for every album each time the list is built - hundreds for one artist subscription. The albums of an artist (subscriptions and the display's artist entries) are kept on the SD card and afterwards checked with one page (Spotify lists the newest first), at most every 6 hours, the whole list once a week, one artist after the other and with pauses. The display gets an artist's albums in one call.</li>
+<li id='linews' class='linews'>The Spotify block outlasts a restart of the box too (kept on the SD card, written only when Spotify sets one): before, the box asked Spotify again right after booting and was blocked anew. Entering another Spotify app (Client ID) in the app makes the box ask again at once - but this does not lift the block as a rule: in a test Spotify blocked the new app of the same account too, so the block seems to hold for the Spotify account (thanks to hyperbit for suggesting and testing it). A new login with the same app does not help either.</li>
+<li id='linews' class='linews'>One Spotify block for the display and the sync (it outlasts a restart of the server): meanwhile the display shows its kept lists. The app shows it on the start page ("Spotify sperrt die Box gerade … bis …") and at Bibliothek › Spotify ("Spotify-Sperre"), without reading logs.</li>
+<li id='linews' class='linews'>When Spotify blocks the app's requests ("too many requests", 429), the sync stops at once instead of asking on for the next albums and artists, and waits for the time Spotify gives (also "sync now" in the app and the bot asks nothing before). The log says how long ("Spotify blocks this app's requests for N min (until …)"), and the app shows it as the next sync. A block while fetching artist pictures no longer applies the run without them.</li>
+<li id='linews' class='linews'>The albums of an artist subscription are filed under the subscribed artist, also where Spotify names someone else first (a choir, a speaker or a publisher): they were filed under that other artist and missing from the subscribed one.</li>
+<li id='linews' class='linews'>A failed sync says why: the reason is in the log, in the app (Bibliothek › Spotify, "Grund") and in the bot's /syncstatus, and a run that could not read a playlist, an album or an artist names it ("Nicht gelesen").</li>
+<li id='linews' class='linews'>The player no longer writes three lines per file (title, path, tags - also for every announcement) into its log; they come with the debug log level only.</li>
+</ul>
+<h3>DEV 5.0.6 - changes compared to 5.0.5</h3>
+<b>Player</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>A new playback starts unpaused and without the picture of the one before: after a pause, a title started next showed the play button on the display while it played, and a local album could show the picture of a podcast episode played before it.</li>
+</ul>
+<b>Web app</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Pinned cards on the start page: the parts of a whole card (e.g. the announcement templates and "Own text …") have the usual spacing.</li>
+<li id='linews' class='linews'>The app is back in the update package: after the update to 5.0.5 the app (port 80, /app) was missing and stayed a white page.</li>
+</ul>
+<b>Installation and system</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>The update stops before anything is replaced if its package lacks the app, instead of leaving the box without it.</li>
+<li id='linews' class='linews'>The web server is restarted after the update and the installation instead of only reloaded, so the new certificate and the app on port 80 work at once and not only after the next restart.</li>
+<li id='linews' class='linews'>xdotool is installed: the display fills the whole screen and the goodbye picture shows in front of it.</li>
+<li id='linews' class='linews'>The installation creates a simple certificate when the installed version has none of its own yet, so the web server starts.</li>
+<li id='linews' class='linews'>The update restarts a running remote display (VNC), so it is reachable through the app only at once and not only after the next restart.</li>
+</ul>
+<h3>DEV 5.0.5 - changes compared to 5.0.4</h3>
+<b>Highlights</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'><b>Choose the episodes of a podcast:</b> all, the newest or the first 10 / 20 / 50, or an own range – already when adding, with a preview of what ends up on the box.</li>
+<li id='linews' class='linews'><b>Speech output in 21 languages:</b> Arabic, Chinese and Hindi now with Piper voices on the box, Japanese through Google.</li>
+<li id='linews' class='linews'><b>No more white screen after an update:</b> the display loads again by itself when the app did not come up.</li>
+<li id='linews' class='linews'><b>Podcast servers in your own network</b> such as Pinepods or Audiobookshelf can be added: the web app asks once to allow the server.</li>
+<li id='linews' class='linews'><b>Pin cards to the start page</b> – as a whole card (e.g. the charge curve or the announcements) or as a link.</li>
+<li id='linews' class='linews'><b>Listen with:</b> switch between the box and Bluetooth headphones right on the display or in the web app.</li>
+</ul>
+<b>Podcasts</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Which episodes of a podcast go on the box: all, the newest 10 / 20 / 50, the first 10 / 20 / 50 or an own range (counted by date, episode 1 is the oldest), with the order (newest or oldest first). Set when adding from the podcast search or later when editing; a preview shows which episodes end up on the box.</li>
+<li id='linews' class='linews'>The choice applies everywhere: the display, the episode lists of the web app, playing from the phone and the SD card, which can keep exactly the chosen episodes. The "new" dot only shows for chosen episodes.</li>
+<li id='linews' class='linews'>Without internet the box shows the episodes saved on the SD card – those are the chosen ones already, the choice is not applied a second time.</li>
+<li id='linews' class='linews'>Editing a podcast on the display keeps its choice of episodes and how many episodes stay on the SD card (the setting for the SD card used to get lost there).</li>
+<li id='linews' class='linews'>Podcast servers in your own network (e.g. Pinepods, Audiobookshelf): the box fetches no addresses of the home network by itself, so nobody can use it as a detour to other devices. When a feed of the home network is added, the web app asks once whether to allow that server (host and port only); the list is under Settings &gt; Services &gt; Servers in the home network. The box itself and loopback addresses are never allowed.</li>
+<li id='linews' class='linews'>Feeds whose address has its own query (e.g. ?api_key=…&amp;podcast_id=5, as Pinepods uses) are read completely on the display – before, everything from the "&amp;" on was lost and the display showed another feed.</li>
+</ul>
+<b>Listening and Bluetooth</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'><b>Listen with:</b> a tap on the volume at the top of the display's player chooses between the box's speaker and a paired Bluetooth device (headphones, speaker) - it connects the device, plays only there and keeps each output's own volume (a device connected the first time is not louder than the box). Not found: said on the display. The same choice is in the web app's "Now playing". Can be switched off for the display under Controls on the display. Only shown when a Bluetooth device is paired.</li>
+<li id='linews' class='linews'>The box's sound card comes back by itself when it dropped out of PulseAudio (seen after headphones were disconnected: nothing was audible until a restart).</li>
+<li id='linews' class='linews'>Bluetooth: the list of paired devices no longer shows devices a search found nearby (phones, watches and trackers without a name appeared there for a few minutes). "Connect automatically" finds the paired devices again on Debian 12 (bluetoothctl 5.66 no longer knows "paired-devices" - no device was connected at the start).</li>
+<li id='linews' class='linews'>Bluetooth: removing a device no longer leaves Bluetooth switched off (it was switched off and at once on again, which failed), takes a moment instead of several seconds and shows at once that it is being removed.</li>
+</ul>
+<b>Speech output</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>The box also speaks Arabic, Chinese, Hindi and Japanese (announcements, messages from the parents, names on the display), with texts of their own. Before, these languages fell back to German.</li>
+<li id='linews' class='linews'>Only Piper voices the box can play are offered (some newer Chinese and Japanese voices need a newer Piper); without a voice the page says so, and Google speaks the language.</li>
+<li id='linews' class='linews'>The page Appearance &gt; Read aloud is gone: the switch for reading names aloud is under Appearance &gt; View below the cover flow it belongs to, the language under Audio &gt; Speech output ("The box speaks").</li>
+</ul>
+<b>Web app</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Pin cards to the start page: every card with a heading has a pin. Some cards come as a whole card you can use right on the start page (charge curve, announcements, headphones), all others as a link that opens the page at that card. Order, card or link, and unpinning under Start &gt; Pinned &gt; Arrange. The pins are kept in the box, so every phone shows the same. Idea and first version by Andreas (Lippsson).</li>
+</ul>
+<b>Display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>When the app has not come up 25 seconds after the page loaded (e.g. the box's server restarted during an update from the console), the display loads the page again – at most three times in five minutes.</li>
+<li id='linews' class='linews'>Children's themes: the volume and the track number at the top of the player are on one line again (the track number sat 2 px lower).</li>
+</ul>
+<b>Installation and system</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>OnOff SHIM on Debian 13 "Trixie" (libgpiod 2): the power button and the power cut at shutdown work there too (pinctrl from raspberrypi-utils, installed where the system has it). Debian 12 "Bookworm" keeps the calls it always had.</li>
+<li id='linews' class='linews'>The installation no longer calls DietPi's own installer for the DietPi-Dashboard: it fetched a nightly build from nightly.link, which is not always there (the installation failed with a 404), as a second dashboard on the same port. The dashboard is installed from its GitHub release as before; unzip is part of the package list now. Installation and update fetch a fixed version of the dashboard (v0.6.2, program and configuration of the same release, checked before it replaces the installed one): later releases split it into two programs with another configuration and could not break it this way.</li>
+</ul>
+<b>Legal</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>The third-party notices also name Piper and its voices, which the box downloads itself when speech output is set up.</li>
+</ul>
+<h3>DEV 5.0.4 - changes compared to 5.0.3</h3>
+<b>Highlights</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'><b>Find podcasts and radio stations in the web app:</b> one search across all podcast providers, including the ARD Audiothek (ARD Sounds), with a language filter and suggestions of popular kids' podcasts for each language; radio stations from radio-browser.info, also with suggestions.</li>
+<li id='linews' class='linews'><b>Podcast episodes on the SD card:</b> per podcast the newest 1 to 20 episodes can be kept on the box, so they also play without internet.</li>
+<li id='linews' class='linews'><b>Continue where you stopped:</b> every podcast episode continues at its last position, NAS albums too – without hearing the beginning first. Switchable, and how long a position is kept can be chosen.</li>
+<li id='linews' class='linews'><b>New episodes and progress on the display:</b> a dot marks new episodes, a bar shows how far an episode was heard and a tick marks finished ones (both switchable).</li>
+<li id='linews' class='linews'><b>Gentle end:</b> sleep timer, end of the playtime and start of a quiet time fade the sound out over 20 seconds instead of stopping hard.</li>
+<li id='linews' class='linews'><b>Box health at a glance</b> and a <b>weekly summary</b> in Telegram on Sunday evening.</li>
+<li id='linews' class='linews'><b>Natural voices on the box:</b> Piper speaks offline with voices for all 17 languages – names on the display, announcements of the remaining playtime, bedtime and the end of the sleep timer, and announcements from the parents ("Dinner is ready!") from the web app or Telegram.</li>
+<li id='linews' class='linews'><b>Evening dimming:</b> the display gets darker in the evening (and during quiet hours, if you like) and bright again in the morning.</li>
+<li id='linews' class='linews'><b>Own volume limit for Bluetooth headphones</b>, and a <b>tidier web app</b>: settings pages in two columns without gaps, with more in them (charge curve, signed-in devices, test message …).</li>
+</ul>
+<b>Podcasts and radio</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Add content: one podcast search for all providers (Apple Podcasts directory and ARD Audiothek) in the language of your choice; only shows in that language are offered. Without a search term the page suggests popular kids' podcasts of that language.</li>
+<li id='linews' class='linews'>ARD Audiothek shows can be added as podcasts (ard:&lt;id&gt;); their episodes come straight from the ARD Audiothek.</li>
+<li id='linews' class='linews'>Radio station search (radio-browser.info) with suggestions of kids' stations for the chosen language.</li>
+<li id='linews' class='linews'>Podcast and radio search can be switched off under Settings &gt; Services; adding content only offers services that are set up (Spotify only when signed in).</li>
+<li id='linews' class='linews'>Episodes on the SD card: per podcast "Off" or the newest 1, 3, 5, 10 or 20 episodes; single episodes can be saved or removed by hand. Saved episodes play without internet.</li>
+<li id='linews' class='linews'>ARD Audiothek: an episode is only saved when the ARD itself releases it for download (from the ARD's download address); all others are streamed only and show a lock. Saved ARD episodes are deleted when their time online at the ARD ends.</li>
+<li id='linews' class='linews'>Every episode keeps its own position (Settings &gt; Controls on the display &gt; Podcasts): on, and kept for 1 month to unlimited. The app shows how far each episode was heard.</li>
+<li id='linews' class='linews'>New episodes are marked on the display and in the app for 3, 7 or 14 days (only episodes that appeared after the podcast was added; gone once played). Started episodes show a progress bar, finished ones a tick.</li>
+<li id='linews' class='linews'>More robust podcasts: very large feeds load, an episode keeps its identity when the feed changes its links, the length comes from the feed, and slow feeds no longer hold up the display.</li>
+</ul>
+<b>Player</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Continuing podcast episodes and NAS albums starts at the saved position without an audible beginning.</li>
+<li id='linews' class='linews'>Long podcast episodes: the display no longer returns to the overview after pauses, and a dropped connection is opened again at the same position.</li>
+<li id='linews' class='linews'>Sleep timer, end of the playtime and start of a quiet time fade out over 20 seconds; the volume is back afterwards (also when the sleep timer is stopped while fading).</li>
+<li id='linews' class='linews'>Spotify: librespot is gone. The display's player is the box's device in the Spotify app on the phone (choose it under "Devices" and play from the phone); the update removes librespot and its cache, which frees up to several GB on the SD card. New installations get Widevine again, which the display's player needs.</li>
+<li id='linews' class='linews'>Telegram "Report playback" now also reports Spotify tracks played on the display.</li>
+<li id='linews' class='linews'>Spotify: the display's player could lose its connection to Spotify without noticing – it counted as ready, but every start went nowhere. It now checks with Spotify before a start and every 3 minutes and connects again when needed.</li>
+<li id='linews' class='linews'>Volume: an own maximum while Bluetooth headphones or a speaker are connected (Settings &gt; Audio &gt; Volume); a louder box goes down to it as soon as they connect.</li>
+</ul>
+<b>Speech output</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>New page Settings &gt; Audio &gt; Speech output: Piper on the box (offline, recommended), Google (online) or silent. Without a Piper voice for the box's language Google or silence takes over, as chosen. The choice also applies to reading names aloud on the display.</li>
+<li id='linews' class='linews'>Voices for all 17 languages (Piper voices from Hugging Face): listen to a sample on the phone, download, use, delete, and try any downloaded voice on the box itself. Quality, size and licence are shown; Piper itself is downloaded with the first voice.</li>
+<li id='linews' class='linews'>The names of the library are prepared in the background (after choosing a voice and whenever the library changes), so the display reads them without delay.</li>
+<li id='linews' class='linews'>Automatic announcements: the remaining playtime 2–15 minutes before its end, the start of a quiet time and the end of the sleep timer – with your own texts and a volume of their own (never above the box's volume).</li>
+<li id='linews' class='linews'>Parents' announcements: templates and your own text, from the start page ("Announcement") or Telegram (/say text), with a gong, and playback paused and continued afterwards (or only quieter).</li>
+</ul>
+<b>Display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Evening dimming (Settings &gt; Display): from / until, brightness in the evening, dimming gradually over up to 60 minutes, optionally also during quiet hours.</li>
+<li id='linews' class='linews'>Own pictures for the start, the goodbye and the empty battery (Settings &gt; Appearance &gt; Boot screens &gt; "Own pictures"): a photo or logo from the phone or PC, fitted to the display (fill or show whole); the console takes its colour, so nothing flashes. The design stays for the maintenance screens and every picture without an own one.</li>
+<li id='linews' class='linews'>Rotation as tiles, the usual resolutions to choose from, "Display off after" in fixed steps.</li>
+<li id='linews' class='linews'>Shutting down no longer shows texts of the console between the goodbye pictures.</li>
+<li id='linews' class='linews'>Themes Super Mario and Steampunk: new name fonts (Titan One, Rye) under a free licence. The unused initramfs splash screen is removed by the update.</li>
+</ul>
+<b>Web app</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Library: filter by source (Spotify, Smart Sync, podcasts, radio, SD card, NAS).</li>
+<li id='linews' class='linews'>iPhone/iPad: the web app on the home screen no longer loads itself again at every change of page ("Verbinde mit der Box …").</li>
+<li id='linews' class='linews'>New page Settings &gt; System &gt; Box health: storage, temperature, power supply (under-voltage), SD card errors, memory, services, internet, NAS, Spotify sign-in, certificate and saved episodes – with what to do and a link to the right page when something is off.</li>
+<li id='linews' class='linews'>Listening history: the minutes of each day above its bar, and audiobooks and podcasts without an artist are counted by their album or show.</li>
+<li id='linews' class='linews'>Telegram: weekly summary on Sunday evening (how long and what was played), switchable under Telegram.</li>
+<li id='linews' class='linews'>Settings pages in two columns without gaps on the PC, save buttons below both columns, settings that belong to a switch only shown with it.</li>
+<li id='linews' class='linews'>Reworked pages: System (in groups, with version, health and updates), MQTT, WLED, Telegram (test message, list of commands), controls on the display (tabs switched on instead of hidden), MuPiHAT (charge curve as a chart, checked while typing), Bluetooth (connect and disconnect paired devices), WiFi (search and add in one place, change the password of a saved network), Spotify access (account, Premium, whether the display is visible), password (signed-in devices, sign out one of them), HTTPS (step by step, guides for Windows and Mac), restart, logs, browser and experts.</li>
+<li id='linews' class='linews'>Forgotten password: after signing in with the QR code on the display or the Telegram link, a new password can be set for 10 minutes without the old one.</li>
+<li id='linews' class='linews'>Cover search also finds covers at Spotify (with the box's Spotify sign-in).</li>
+<li id='linews' class='linews'>New page Settings &gt; System &gt; Legal: licence, third-party notices of all components, pictures and fonts of the themes, privacy and the external services the box uses.</li>
+</ul>
+<h3>DEV 5.0.3 - changes compared to 5.0.2</h3>
+<b>Highlights</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'><b>The new MuPiBox web app</b> for phone, tablet and PC: play, library, playtime, Spotify, NAS and all settings in one place, in 17 languages – and on Android it can be installed like a real app.</li>
+<li id='linews' class='linews'><b>Much faster box:</b> it starts and shuts down several seconds quicker, and it now keeps an index of all content – SD card, Spotify and NAS – so switching between categories and opening artists and albums is instant, with covers loading right away.</li>
+<li id='linews' class='linews'><b>Search Spotify and add content from the web app:</b> find albums, audiobooks and artists and add them with one tap, or paste any Spotify, radio or podcast link.</li>
+<li id='linews' class='linews'><b>Spotify Smart Sync:</b> manage the box from your own Spotify account – albums in playlists named after the box appear on it automatically, whole artists can be followed.</li>
+<li id='linews' class='linews'><b>Upload media from the web app:</b> copy tracks and whole folders from the phone or PC straight onto the SD card, no network share needed.</li>
+<li id='linews' class='linews'><b>Covers from the internet:</b> albums without a picture can get one automatically (iTunes / Deezer, switched on in the web app), and any cover can be searched online, replaced by your own picture or hidden.</li>
+<li id='linews' class='linews'><b>NAS in all tabs:</b> NAS folders can appear in Audiobooks, Music or Other, a folder index finds any folder instantly, and downloaded folders stay up to date by themselves.</li>
+<li id='linews' class='linews'><b>Playtime limits and quiet hours:</b> daily listening time per weekday and quiet times (homework, bedtime), with a gentle end of the current track or album.</li>
+<li id='linews' class='linews'><b>30 new kids' themes</b> with mascots and big buttons, 16 boot screens with the box's own name, and display texts in 17 languages.</li>
+<li id='linews' class='linews'><b>Parents' remote control:</b> Telegram commands (extra time, quiet now, sign-in link), a live picture of the display and remote control of the box right in the web app.</li>
+<li id='linews' class='linews'><b>Secure connection:</b> the box's own certificate for https without warnings, one password for web app and admin interface, and many security fixes.</li>
+</ul>
+<b>New MuPiBox web app</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>New web app at http://&lt;box&gt;/app for phone, tablet and PC: now playing, listening, library, playtime, Spotify, NAS, covers, appearance, audio, battery, network, services, security and system in one place. http://&lt;box&gt;/ now opens a sign-in page where you choose between the web app (beta) and the admin interface.</li>
+<li id='linews' class='linews'>One password for the web app and the admin interface. With "Require sign-in" switched off both can be used in the home network without a password. You can also sign in with the QR code on the box (Settings &gt; Parent web app) or with the Telegram command /login.</li>
+<li id='linews' class='linews'>"Stay signed in" keeps a device signed in for 90 days, also across restarts. "Sign out all other devices" or a new password ends all other sessions, in the admin interface too.</li>
+<li id='linews' class='linews'>Start page: what is playing now (cover, progress, controls, volume with the hearing protection limit marked), tiles for battery, listening time today, quiet hours and WiFi, quick actions (+15 min, Quiet now, Sleep timer) and notices only when needed (battery low or not charging, Spotify login running out, update available, MuPiBox news).</li>
+<li id='linews' class='linews'>17 languages (taken from the browser or chosen by hand), light and dark design, and it can be added to the home screen like an app.</li>
+<li id='linews' class='linews'>The admin interface stays available; "Advanced settings" in the app opens it already signed in.</li>
+</ul>
+<b>Listen and play</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Listen page in the app: audiobooks, music, radio &amp; podcasts, folders on the SD card, NAS folders and whole Spotify artists as covers, with search and filters. Tap to play on the box (the app asks first if something else is playing). Podcasts show their episodes to choose from, newest first.</li>
+<li id='linews' class='linews'>The display follows playback started from the app or Telegram: it opens the player with the right cover and switches when another album is started.</li>
+<li id='linews' class='linews'>The player shows the cover stored in the file that is playing (MP3 and FLAC), so a folder of different stories shows a cover for each story.</li>
+<li id='linews' class='linews'>Radio links to m3u / pls playlists play the first stream of the list. WMA files from the NAS play.</li>
+<li id='linews' class='linews'>Resume jumps straight to the saved track and position without playing bits of other tracks first. The resume list is sorted by last played, and a position is only saved after something was really listened to.</li>
+<li id='linews' class='linews'>Spotify and local / NAS / radio no longer play at the same time after switching.</li>
+</ul>
+<b>Library</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Library page: library entries, SD card folders and NAS folders in one list with search and filters for category and source, grouped by artist (artist &gt; album). Edit or delete entries and SD card albums, change the address of a radio station or podcast. The list updates itself when something changes elsewhere.</li>
+<li id='linews' class='linews'>"+ Add": search Spotify (add albums or a whole artist), paste a link (Spotify, radio, podcast, m3u / pls, with ID check, audiobook detection, sorting, shuffle and range) or upload tracks and whole folders from the phone or PC to the SD card.</li>
+<li id='linews' class='linews'>Covers: search one online or use your own picture (cropped to a square), for entries, SD card folders and NAS folders (on the NAS it is saved as cover.jpg if the box may write there). "No cover" hides a folder's picture without deleting anything.</li>
+<li id='linews' class='linews'>Online covers (off by default; app or Admin &gt; Cover): albums without a picture, and albums with a scanned, non-square picture, get a cover from iTunes or Deezer. Only covers that clearly match are used. They can also be saved as cover.jpg in the album folder.</li>
+</ul>
+<b>Spotify</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Smart sync (optional): create Spotify playlists whose names start with the box name (e.g. "MuPiBox Audiobooks", "MuPiBox Music"). The box adds their albums to its library and keeps them up to date. Conflicts with your own entries are shown in the app.</li>
+<li id='linews' class='linews'>Managed content: follow a whole artist, optionally only a range of episodes, and leave out single albums.</li>
+<li id='linews' class='linews'>A step-by-step set-up in the app (client ID, client secret, redirect URI to copy). <b>Redirect URI:</b> boxes that are already set up keep https://&lt;box&gt;/spotify.php (it now forwards to the app). New set-ups use https://&lt;box&gt;/app/spotify-callback. The app shows which one must be in your Spotify developer app.</li>
+<li id='linews' class='linews'>Spotify now keeps the login of a developer app for only 6 months. The box remembers the date, reminds you 14 and 3 days before (Telegram and app), and the start page takes you straight to a new login.</li>
+<li id='linews' class='linews'>Spotify Connect: sign in again from the app, see its state and errors, or switch it off completely (it stays off after restarts and updates).</li>
+<li id='linews' class='linews'>Faster and more robust: covers are cached on the box, artists with hundreds of albums load much faster, a long Spotify block ("too many requests") no longer hangs the lists, and playback started from the app or Telegram plays on the box.</li>
+</ul>
+<b>NAS</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>NAS folders can be shown in the Audiobooks, Music or Other tab instead of the NAS tab. A folder with several series can show each series as its own tile. Set in the app (NAS or library) or in the NAS tab of the admin interface.</li>
+<li id='linews' class='linews'>NAS page in the app: sign in, profiles, folder tree with search, show / hide / download folders, reload covers.</li>
+<li id='linews' class='linews'>HTTPS for the NAS, also with the NAS's self-signed certificate (confirm its fingerprint once).</li>
+<li id='linews' class='linews'>Faster and more reliable: large folders open in a fraction of a second, the next track is loaded in advance (no gap between tracks), playback carries on where it stopped after a connection drop, and a slow or waking NAS is waited for.</li>
+<li id='linews' class='linews'>Folders with their own tracks and subfolders can be opened. System folders (@eaDir, #recycle, ...) and folders without audio are hidden. WebP and JFIF covers work. New in the NAS tab: "Show only selected" and "Reload covers". Downloaded folders stay up to date (new episodes are added, deleted ones removed).</li>
+</ul>
+<b>Kids' themes and display</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>30 new kids' themes (e.g. Cuddle Moon, Unicorn Dream, Dino Land, Pirate Cove, Fire Station, Outer Space, Day &amp; Night), each with its own mascot, background and cover placeholder, large covers and big buttons.</li>
+<li id='linews' class='linews'>Optional Cover Flow "stage" with a large cover in the middle. Tapping the name reads it aloud, optionally also when the list stops. "Day &amp; Night" turns to night in the evening and during quiet hours.</li>
+<li id='linews' class='linews'>The 37 older themes (all except coverflow) also use the new layout and keep their colors, background and font.</li>
+<li id='linews' class='linews'>New WiFi and battery display (percentage inside the battery) and the same track list (panel with cover and close button) in all themes. Covers are always square.</li>
+<li id='linews' class='linews'>Choose the theme in the app with a preview, and the display can use it immediately.</li>
+<li id='linews' class='linews'>16 boot screens with the box's own name (or a random one each start), with matching screens for updates, installation, new WiFi, goodbye and empty battery. The default is "Card".</li>
+<li id='linews' class='linews'>The texts on the display (limit reached, quiet time, QR code) can be changed, with a live preview, and are available in 17 languages.</li>
+<li id='linews' class='linews'>Faster start and shutdown: the display is ready several seconds earlier, the boot screen stays until the menu appears (no black or white flashes), and the goodbye picture comes right away.</li>
+<li id='linews' class='linews'>Lists open at once (category and album lists are remembered), swiping is smoother, and the position in a list is kept.</li>
+</ul>
+<b>Playtime and quiet hours</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Daily playtime limit per weekday, with a badge showing the remaining time and a lock screen on the display.</li>
+<li id='linews' class='linews'>When the limit is reached or quiet hours begin, playback stops right away, or the track or album may finish (for 5 min to 3 h, 15 min by default). Podcasts may finish their episode, radio stops at once.</li>
+<li id='linews' class='linews'>Quiet hours: several time windows per day with names (e.g. homework, bedtime), also over midnight.</li>
+<li id='linews' class='linews'>From the app, Telegram or the admin interface: bonus minutes, "Quiet now" for a while, lifting all locks for a while, sleep timer. "Quiet now" and lifting the locks end each other.</li>
+<li id='linews' class='linews'>In the app: ring with the remaining time, limits per weekday, the hour at which a new day starts, rules for quiet hours, and a listening history (today, last 7 days, top lists).</li>
+</ul>
+<b>Telegram</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Parent commands: /status, /extend, /release, /quietnow, /limit set and /login (sign-in link to the app), plus smart sync commands (/resync, /syncstatus, /playlists, /spotify_connect, /spotify_disconnect).</li>
+<li id='linews' class='linews'>The bot only answers allowed chats. Several chats and group chats work, and the app can find the chat ID for you.</li>
+<li id='linews' class='linews'>Only important messages by default (limit reached, quiet hours, battery low, battery not charging, Spotify login running out, sync problems). Messages for every track, pause and stop can be switched on.</li>
+<li id='linews' class='linews'>Bot and messages are in German or English, following the display language.</li>
+</ul>
+<b>Battery and hardware</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Battery level in 5 % steps with a charging symbol, and in the app a 24-hour battery history and a battery profile editor with safety checks.</li>
+<li id='linews' class='linews'>New battery profile ENERpower 2S3P 15,000 mAh, corrected 2S2P profile. Profiles can set the charge voltage.</li>
+<li id='linews' class='linews'>MuPiHAT: the settings on the charger chip are checked, and a wrong cell count that could stop charging is corrected. Implausible readings are filtered out, the service is restarted if it hangs, and Custom battery values take effect right after saving.</li>
+<li id='linews' class='linews'>Warning in the app and on Telegram when the battery does not charge although the power supply is plugged in (unplug the power supply for a moment).</li>
+<li id='linews' class='linews'>Rotary encoder (KY-040) for the volume, with push button. The power LED uses hardware PWM (less CPU load). The fan service is installed and applies changes immediately.</li>
+</ul>
+<b>Network and remote access</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>WiFi: 2.4 GHz, 5 GHz or auto per saved network, live status (band, signal, IP), open networks work, and passwords are checked (8 to 63 characters) so a wrong one can no longer take the box offline.</li>
+<li id='linews' class='linews'>LAN: settings with static IP on the box, LAN and onboard WiFi can be switched off, and the box switches automatically between LAN and WiFi (LAN first, as soon as the cable is plugged in).</li>
+<li id='linews' class='linews'>A more tolerant WiFi monitor for all versions, and power saving settings for USB WiFi drivers (RTL88X2BU / RTL8821AU).</li>
+<li id='linews' class='linews'>In the app: WiFi, network options, shares (Samba, FTP, VNC), MQTT / Home Assistant, WLED, and remote control of the box's display (VNC) right in the page.</li>
+</ul>
+<b>Security</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>The box has its own certificate that only works for home network addresses. Install it once per phone or computer (app: Security &gt; Encryption (HTTPS), with instructions for Android and iPhone): https then works without a warning, and on Android the app can be installed like a real app. Optional: always use https, or upload your own certificate (reminder before it runs out).</li>
+<li id='linews' class='linews'><b>The player port 5005 only answers the box itself.</b> The display page and the API on port 8200 answer other devices only with an app sign-in when "Require sign-in" is on.</li>
+<li id='linews' class='linews'>Other websites can no longer send commands to the box, passwords and tokens are no longer given out, and radio, podcast and cover downloads can no longer reach the box or the home network. Several ways to inject commands or scripts were closed.</li>
+<li id='linews' class='linews'>Admin interface: CSRF protection on every page, restore checks every file of a backup, backup files no longer stay on the web server, and changing the password needs the current one (at least 6 characters).</li>
+</ul>
+<b>Reliability and updates</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Settings and library are always saved completely or not at all – a power cut while saving no longer leaves a broken file behind.</li>
+<li id='linews' class='linews'>Before each save the previous settings and library are kept (the last version and one copy per day for 7 days).</li>
+<li id='linews' class='linews'>Update: resume positions, offline lists, podcast data and covers are kept and checked, the old installation is only removed after everything was restored, and the sound card is no longer reset.</li>
+<li id='linews' class='linews'>Updates (stable, beta, dev) and operating system updates, backup and restore can be started in the app, with progress.</li>
+<li id='linews' class='linews'>Services and the player restart by themselves after a crash, and the box writes much less to the SD card (browser cache in RAM, fewer log lines).</li>
+</ul>
+<b>Admin interface</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>New "Parental" page: sleep timer, automatic shutdown, playtime limit and quiet hours (rules in a table, Enable / Disable button). The sign-in settings are now under Admin.</li>
+<li id='linews' class='linews'>MuPi-Conf: sections in a clearer order, kids' themes with the stage switch, boot and maintenance screens, display texts with preview. The menu highlights the current page.</li>
+<li id='linews' class='linews'>NAS tab with a category per folder, Admin &gt; Cover for online covers, settings for the rotary encoder and the USB WiFi driver.</li>
+<li id='linews' class='linews'>"Add media" was removed from the box's settings menu: the library is managed in the app (or the admin interface).</li>
+</ul>
+
+<h3>DEV 5.0.0 - changes compared to the stable version</h3>
+<b>NAS as a media source</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>New "NAS" tab in the admin and on the display: connect any NAS with a WebDAV server (Synology, QNAP, TrueNAS, ...). Login with address incl. WebDAV port, account and password.</li>
+<li id='linews' class='linews'>Folder list in the admin works like the Windows file explorer (expandable tree, alphabetical). Tick "Show in Mupibox" to list a folder in the NAS tab and "Download local" to keep a copy on the MuPiBox.</li>
+<li id='linews' class='linews'>Any number of folder levels in the NAS tab. Changes on the NAS show up immediately - no media update needed.</li>
+<li id='linews' class='linews'>Download local: "Download selected" copies the ticked folders (incl. parent covers) to ~/MuPiBox/media/NAS, skips what is already there and removes local copies that were unticked. Downloaded folders also play when the NAS or the network is not available.</li>
+</ul>
+<b>Player</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Track list: press and hold the cover to see all tracks of the album (Spotify, local and NAS) and jump to any of them. The hold time is set with "Listview timer" in the admin.</li>
+<li id='linews' class='linews'>Audiobooks, Music and Other read the media folders live at any folder depth - "Reload media database" is no longer needed and was removed.</li>
+<li id='linews' class='linews'>Radio streams and podcasts show a loading ring in the middle of the cover while they are buffered: the ring gets smaller as the buffer fills and disappears when playback starts.</li>
+<li id='linews' class='linews'>Track titles with umlauts, sharp s and a-ring (ID3 tags stored as Latin-1) are shown correctly instead of question marks.</li>
+<li id='linews' class='linews'>New option "Hide horizontal scrollbar" below the theme preview (Mupi-conf &gt; MuPiBox settings) hides the new draggable scrollbar of the cover lists for every theme.</li>
+<li id='linews' class='linews'>Covers load much faster: large cover pictures are shown as small thumbnails (made once with python3-pil and cached; without it the originals are used).</li>
+<li id='linews' class='linews'>New theme "coverflow" (Mupi-conf &gt; MuPiBox settings &gt; Theme): 
+</ul>
+<b>Hidden Menu</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Redesigned WiFi settings: status card with signal and IP, list of available networks sorted by signal strength (saved networks out of range are greyed out), connect, change password and delete saved networks.</li>
+<li id='linews' class='linews'><b>Open hidden settings by pressing and holding the status icon for 6 seconds (duration set with "Access to settings" in the admin) instead of clicking ten times.</b></li>
+<li id='linews' class='linews'>The WiFi list shows the band next to the signal: 2.4 GHz, 5 GHz or both (for the connected network also the band in use).</li>
+<li id='linews' class='linews'>New Bluetooth settings page.</li>
+</ul>
+<b>Podcasts and radio</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Podcast feeds and covers are cached on disk (survive a reboot) and refreshed in the background; missing covers are downloaded again automatically. Episode images load on demand, long lists stay fast.</li>
+<li id='linews' class='linews'>Long podcasts open much faster: only title, audio file, date and image of each episode are read and cached (a 3 MB feed shrinks to about 350 KB), feeds are refreshed at most every 15 minutes, and the backend is no longer blocked while a feed is processed.</li>
+<li id='linews' class='linews'>Radio streams: cover pictures are saved on the box and shown from there. If the cover address changes, the new picture is downloaded again.</li>
+</ul>
+<b>Admin</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Control system &gt; tab visibility: hide admin tabs (Home, MuPiBox and Admin always stay visible).</li>
+<li id='linews' class='linews'>The "Music database" section (update mediadata, ID3 converter) was removed - the lists read the folders live, and title tags are decoded correctly by the player.</li>
+<li id='linews' class='linews'>Control system &gt; "Hide display categorys": hide the Audiobooks / Music / NAS / Other tabs; the remaining tabs are spread evenly (at least one stays visible).</li>
+</ul>
+<b>Network</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Tolerant WiFi monitor: DietPi re-connected the WiFi (about 15 seconds without network) as soon as one ping to the router was lost. Now three pings are sent per check and it only re-connects after three failed checks in a row, so podcasts and NAS content no longer disappear for short dropouts.</li>
+</ul>
+<b>Update</b>
+</ul>
+<ul id='ulnews' class='ulnews'>
+<li id='linews' class='linews'>Safer update script: files are downloaded and verified before anything is changed, config and data are backed up first, and a failed download aborts the update instead of leaving a broken installation.</li>
+<li id='linews' class='linews'>The update script can install a branch of this fork directly.</li>
+</ul>
+
+<h3>OS-Support</h3>
+We will focus on <b>bookworm</b> and recommend you to update, or reinstall. See also this dietpi-article: <a href=https://dietpi.com/blog/?p=3128>https://dietpi.com/blog/?p=3128</a>

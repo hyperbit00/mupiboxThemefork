@@ -1,0 +1,12 @@
+[Unit]
+Description=Checks Internet Connection
+
+[Service]
+User=dietpi
+Group=dietpi
+ExecStart=/usr/local/bin/mupibox/./check_network.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

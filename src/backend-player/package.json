@@ -1,0 +1,37 @@
+{
+  "name": "mupibox-backend-player",
+  "version": "1.0.0",
+  "author": "Mupi Team",
+  "homepage": "https://github.com/splitti/mupibox",
+  "scripts": {
+    "serve": "cross-env NODE_ENV=development node src/spotify-control.js",
+    "build": "esbuild src/spotify-control.js --bundle --minify --platform=node --target=node22 --metafile=backend-player.esbuild-meta.json --outfile=../deploy/spotify-control.js",
+    "test": "node --test test/",
+    "lint": "npx @biomejs/biome check .",
+    "lint:fix": "npx @biomejs/biome check --fix .",
+    "build-proto": "npx pbjs -t static-module -w commonjs -p proto -o src/spotify-proto.js proto/spotify/login5/v3/login5.proto",
+    "build:test": "esbuild test/engine.test.js --bundle --platform=node --target=node22 --outfile=../deploy/engine-test.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "console-log-level": "^1.4.1",
+    "debug": "^4.3.4",
+    "express": "^4.17.1",
+    "google-tts-api": "2.0.2",
+    "js-string-escape": "^1.0.1",
+    "spotify-web-api-node": "^5.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "*"
+  },
+  "description": "Playback backend for the MupiBox.",
+  "private": true,
+  "_unusedDependencies": {
+    "byline": "2026-09-20: line splitting of the mplayer output is done by hand now (raw bytes, see mplayer-wrapper.js)",
+    "protobufjs": "2026-09-20: only the never-finished Spotify login protocol (build-proto script) used it; no proto/ folder or generated file exists",
+    "protobufjs-cli": "2026-09-20: only the build-proto script used it (see protobufjs)",
+    "nodemon": "2026-09-20: the serve script starts node directly",
+    "http": "2026-09-20: Node.js built-in module, no npm package needed",
+    "path": "2026-09-20: Node.js built-in module, no npm package needed"
+  }
+}

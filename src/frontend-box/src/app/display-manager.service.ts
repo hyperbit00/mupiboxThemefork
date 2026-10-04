@@ -1,0 +1,121 @@
+import { HttpClient } from '@angular/common/http'
+import { Injectable } from '@angular/core'
+import { interval, Subject, Subscription } from 'rxjs'
+import { throttleTime } from 'rxjs/operators'
+import { environment } from 'src/environments/environment'
+import { MupiboxConfig } from './mupibox-config.model'
+import { SpotifyService } from './spotify.service'
+
+@Injectable({
+  providedIn: 'root',
+})
+export class DisplayManagerService {
+  private idleTimeoutMinutes = 1
+  private lastActivityTimestamp: number = Date.now()
+  private idleCheckInterval: Subscription | undefined
+  private activityDebouncer = new Subject<void>()
+  private activitySubscription: Subscription | undefined
+
+  constructor(
+    private http: HttpClient,
+    private spotifyService: SpotifyService,
+  ) {
+    console.log('[DisplayManager] Service initialized')
+    this.loadIdleTimeout()
+  }
+
+  private loadIdleTimeout(): void {
+    console.log('[DisplayManager] Loading idle timeout from config...')
+    this.http.get<MupiboxConfig>(`${environment.backend.apiUrl}/config`).subscribe({
+      next: (config) => {
+        // 0 = never (as the app and the admin interface say); only a missing or broken value falls back to 1 minute
+        const timeout = Number.parseInt(String(config?.timeout?.idleDisplayOff ?? '1'), 10)
+        this.idleTimeoutMinutes = Number.isFinite(timeout) && timeout >= 0 ? timeout : 1
+        console.log(`[DisplayManager] Idle timeout set to ${this.idleTimeoutMinutes} minute(s)`)
+        this.initialize()
+      },
+      error: (err) => {
+        console.warn('[DisplayManager] Could not load config, using default timeout of 1 minute.', err)
+        this.initialize()
+      },
+    })
+  }
+
+  private initialize(): void {
+    console.log('[DisplayManager] Initializing activity tracking and idle monitoring...')
+    this.setupActivityTracking()
+    this.startIdleMonitoring()
+  }
+
+  private setupActivityTracking(): void {
+    // Listen for user activity events on the document
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    for (const eventName of activityEvents) {
+      document.addEventListener(eventName, () => this.activityDebouncer.next(), { passive: true })
+    }
+
+    // LOW-4 / A23: previous comment claimed "Debounce activity events to avoid
+    // spamming resets" but the pipe was empty — every mousemove and touchstart
+    // tick fired a fresh resetIdleTimer call (which writes to a Date.now()
+    // field, so cheap, but still wakes the JS event loop hundreds of times
+    // a second on a busy screen). Add throttleTime(500ms) so we update the
+    // last-activity timestamp at most twice a second — plenty for a 1-minute
+    // idle threshold and orders of magnitude less work.
+    this.activitySubscription = this.activityDebouncer.pipe(throttleTime(500)).subscribe(() => {
+      this.resetIdleTimer()
+    })
+  }
+
+  private resetIdleTimer(): void {
+    this.lastActivityTimestamp = Date.now()
+  }
+
+  private startIdleMonitoring(): void {
+    if (this.idleCheckInterval) {
+      this.idleCheckInterval.unsubscribe()
+    }
+    // Check for idleness every 5 seconds
+    this.idleCheckInterval = interval(5000).subscribe(() => {
+      this.checkIdleState()
+    })
+  }
+
+  private checkIdleState(): void {
+    // "Display aus nach 0 min" = the display stays on
+    if (this.idleTimeoutMinutes <= 0) return
+    const isPlaying = this.spotifyService.playerState$.value?.paused === false
+    const idleTimeSeconds = (Date.now() - this.lastActivityTimestamp) / 1000
+    const timeoutSeconds = this.idleTimeoutMinutes * 60
+
+    console.log(
+      `[DisplayManager] Check: Playing=${isPlaying}, Idle=${idleTimeSeconds.toFixed(1)}s, Timeout=${timeoutSeconds}s`,
+    )
+
+    if (!isPlaying) {
+      // If not playing, we don't need to force the screen off. The system's default BlankTime should work.
+      return
+    }
+
+    if (idleTimeSeconds >= timeoutSeconds) {
+      console.log(`[DisplayManager] User idle for ${idleTimeSeconds}s while playing. Forcing screen off.`)
+      this.forceScreenOff()
+      // Reset timer after forcing off to prevent repeated calls
+      this.resetIdleTimer()
+    }
+  }
+
+  private forceScreenOff(): void {
+    this.http.post(`${environment.backend.apiUrl}/screen/off`, {}).subscribe({
+      next: () => console.log('[DisplayManager] Screen off command sent successfully.'),
+      error: (err) => console.error('[DisplayManager] Failed to send screen off command.', err),
+    })
+  }
+
+  // LOW-4 / A23: removed dead ngOnDestroy. The service is providedIn: 'root',
+  // so Angular keeps it alive for the entire app lifetime — ngOnDestroy never
+  // fires. The cleanup it claimed to do was theatre. The DOM listeners
+  // attached to `document` in setupActivityTracking() likewise stay attached
+  // for the app lifetime (which is fine — `document` lives just as long).
+  // If we ever switch to a non-root scope this needs revisiting; until then
+  // honesty beats cargo-culted lifecycle hooks.
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Scripts at Start and Stop
+After=pulseaudio.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/local/bin/mupibox/mupi_startup.sh
+ExecStop=/bin/bash -c '[ -z "$DISABLE_MUPI_START_STOP" ] && /usr/local/bin/mupibox/mupi_shutdown.sh'
+
+[Install]
+WantedBy=multi-user.target

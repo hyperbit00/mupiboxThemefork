@@ -1,0 +1,30 @@
+<ion-header class="settings-header">
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button icon="arrow-back-outline" defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    @let networkVar = network();
+    @if (networkVar?.host !== undefined && networkVar?.ip !== undefined) {
+      <ion-title>Settings: {{ networkVar?.host }} - {{ networkVar?.ip }}</ion-title>
+    } @else {
+      <ion-title>Settings</ion-title>
+    }
+    <span slot="end" class="mupihat-icon-container"><mupi-status></mupi-status></span>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <ion-grid class="settings-grid">
+    <ion-row>
+      @for (entry of menuEntries(); track entry.data) {
+        <ion-col size="6">
+          <ion-card class="settings-tile" (click)="entryClicked(entry)">
+            <img draggable="false" ondragstart="return false;" [src]="entry.imgSrc | async" />
+            <ion-card-header>
+              <ion-card-title class="ion-text-nowrap truncate-text ion-text-center">{{ entry.name }}</ion-card-title>
+            </ion-card-header>
+          </ion-card>
+        </ion-col>
+      }
+    </ion-row>
+  </ion-grid>
+</ion-content>

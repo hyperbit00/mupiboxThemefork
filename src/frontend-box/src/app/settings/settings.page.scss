@@ -1,0 +1,36 @@
+.mupihat-icon-container {
+    padding-right: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-grid {
+    .settings-tile {
+        --background: #262626;
+        margin: 12px auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 12px 12px;
+        max-width: 320px;
+
+        img {
+            filter: invert(1);
+            width: 64px;
+            height: 64px;
+            padding: 10px;
+            -user-select: none;
+        }
+
+        ion-card-header {
+            width: 100%;
+            padding-top: 0;
+        }
+
+        .truncate-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}
